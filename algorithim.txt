@@ -1,0 +1,31 @@
+---------------------------------------------------------------------------------------------------------
+
+# Start
+-> Wait for command 
+-> 1 authentication
+-> 2 Enroll
+-> 3 Delete 
+
+>>in Enroll
+-> register finger (capture and saved by id)
+-> Enter password 
+-> confirm password
+-> register rf id card or tag (capture and saved by id)
+
+>> in Delete 
+-> enter id for finger print to be deleted 
+-> delete password 
+-> delete id of rf id card or tag 
+
+>> in authentication 
+-> enter finger print 
+-> if(valid): pass ? return error 
+-> enter password 
+-> if(valid ): pass ? return error 
+-> enter rf id card or tag 
+-> if(valid) : pass ? return error 
+
+// 
+>>> On device enroll 
+-> **#23BDA (this to set enroll) 
+-> 

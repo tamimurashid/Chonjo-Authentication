@@ -1,0 +1,22 @@
+>>>Rfid 
+VCC: Connect to 3.3V or 5V.
+GND: Connect to GND.
+SCK: Connect to GPIO14 (D5).
+MOSI: Connect to GPIO13 (D4).
+MISO: Connect to GPIO12 (D6).
+SDA/SS: Connect to GPIO4 (SC).
+IRQ: Can be left unconnected or connected to a free GPIO.
+
+
+
+SS_PIN (SDA/SS): Connected to GPIO4 (D2)
+RST_PIN: Connect this to a free GPIO; in the example, it's set to GPIO0 (D3), but you can change it.
+SCK: Connected to GPIO14 (D5)
+MOSI: Connected to GPIO13 (D7)
+MISO: Connected to GPIO12 (D6)
+VCC: Connect to 3.3V or 5V
+GND: Connect to GND
+
+>>>>Buzzle 
+OUT: Connect to GPIO4 (SK).
+GND: Connect to GND.
