@@ -3,8 +3,7 @@
 #include "Authenticate.h"
 #include "Enroll.h"
 #include "Delete.h"
-#include "Indicator.h"
-#include "LCD_Display.h"
+
 
 #define SDA_PIN D2
 #define SCL_PIN D1
@@ -20,7 +19,7 @@ Adafruit_Fingerprint finger(&mySerial);
 Authenticate auth(finger);
 Enroll enroll(finger);
 Delete del(finger);
-LCD_Display lcd(0x27, 16, 2);
+
 
 // Function prototypes
 String readCommand();
@@ -29,15 +28,11 @@ String readArduinoData();
 void setup() {
     Serial.begin(9600);
     Wire.begin(SDA_PIN, SCL_PIN);
-    lcd.begin();
     while (!Serial);
     delay(100);
     Serial.println("\n\nFingerprint System");
 
-    lcd.printMessage("Hi there", 0);
     delay(1000);
-
-    lcd.scrollMessage("Welcome to Authentication system", "Talion's System", 1);
 
     finger.begin(57600);
     if (finger.verifyPassword()) {
@@ -50,16 +45,10 @@ void setup() {
 
 void loop() {
     Serial.println("Waiting for command...");
-    lcd.clearMessage();
-    lcd.printMessage("Waiting for", 0);
-    lcd.printMessage("command...", 1);
     String command = readCommand();
 
     if (command == "ENROLL" || command == "enroll" || command == "2") {
         Serial.println("Starting enrollment...");
-        lcd.clearMessage();
-        lcd.scrollMessage("Starting enrollment...", "Registration..", 1);
-        
         // Get the ID and name from the Arduino
         Serial.println("Enter user ID and Name from Arduino:");
         String data = readArduinoData();
@@ -78,9 +67,6 @@ void loop() {
 
     } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
         Serial.println("Entering continuous authentication mode.");
-        lcd.clearMessage();
-        lcd.printMessage("Authentication..", 0);
-        lcd.printMessage("mode On progress", 1);
         while (true) {
             auth.authenticateFingerprint();
 
@@ -89,24 +75,15 @@ void loop() {
                 char c = Serial.read();
                 if (c == 'S' || c == 's') {
                     Serial.println("Stopping authentication mode.");
-                    lcd.clearMessage();
-                    lcd.printMessage("Authentication", 0);
-                    lcd.printMessage("mode stopped.", 1);
                     break;
                 }
             }
         }
     } else if (command == "DELETE" || command == "d" || command == "D" || command == "3") {
         Serial.println("Starting delete mode...");
-        lcd.clearMessage();
-        lcd.scrollMessage("Starting delete mode...", "Registration..", 1);
-
         del.deleteFingerprint();
     } else {
         Serial.println("Invalid command.");
-        lcd.clearMessage();
-        lcd.printMessage("Invalid command", 0);
-        lcd.printMessage("Try again.", 1);
     }
 }
 
