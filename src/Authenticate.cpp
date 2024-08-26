@@ -8,10 +8,7 @@
 #include "Authenticate.h"
 #include <Arduino.h>
 #include <Wire.h>
-#include "Indicator.h"
-#include "Lock.h"
-#include "AlertSound.h"
-#include "LCD_Display.h"
+
 /* End of header declaration */
 
 #define SDA_PIN D2
@@ -38,12 +35,9 @@ const unsigned long SoundDelay = 100;
 /* End of other varible declaration */
 
 /* Class declaration or creation */
-AlertSound alertsound(buzzle_pin, SoundDelay);
-Lock lock(trigger, backresponse);
-Indicator indicator(ledPin1, ledPin2,  warningDelay, successDelay);
+
 Authenticate::Authenticate(Adafruit_Fingerprint &fingerprintSensor) : finger(fingerprintSensor) {}
-LCD_Display lcd1(0x27, 16, 2);
-/*End of class declaration */
+
 
 uint8_t Authenticate::getFingerprintID() {
     uint8_t p = finger.getImage();
@@ -57,19 +51,17 @@ uint8_t Authenticate::getFingerprintID() {
             return p;
         case FINGERPRINT_PACKETRECIEVEERR:
             Serial.println("Communication error");
-            lcd1.printMessage("Communication error", 0);
-            indicator.error();
+    
+           
             delay(1000);
             return p;
         case FINGERPRINT_IMAGEFAIL:
             Serial.println("Imaging error");
-            indicator.error();
+           
             delay(1000);
             return p;
         default:
-            Serial.println("Unknown error");
-            lcd1.printMessage("Unknown error", 1);
-            indicator.error();
+            Serial.println("Unknown error");     
             delay(1000);
             return p;
     }
@@ -82,18 +74,16 @@ uint8_t Authenticate::getFingerprintID() {
             break;
         case FINGERPRINT_IMAGEMESS:
             Serial.println("Image too messy");
-            lcd1.printMessage("Error ...", 0);
-            lcd1.printMessage("Put finger print correct", 1);
             delay(1000);
             return p;
         case FINGERPRINT_PACKETRECIEVEERR:
             Serial.println("Communication error");
-            indicator.error();
+           
             delay(1000);
             return p;
         case FINGERPRINT_FEATUREFAIL:
             Serial.println("Could not find fingerprint features");
-            indicator.error();
+           
             delay(1000);
             return p;
         case FINGERPRINT_INVALIDIMAGE:
@@ -112,22 +102,14 @@ uint8_t Authenticate::getFingerprintID() {
         Serial.println("Found a print match!");
         Serial.print("Found ID #"); Serial.print(finger.fingerID);
         Serial.print(" with confidence of "); Serial.println(finger.confidence);
-        lcd1.printMessage("Thankyou .. ", 0);
-        lcd1.printMessage("FInger match  with id: " + finger.fingerID, 1);
-        indicator.success();// this will light the green led to show succsses 
-        //servoControl.rotateOnSuccess();
-        alertsound.Success_alert();
-        lock.Open();// this will trigger the solenoid lock to open and remain open for five minutes 
+       
         return finger.fingerID;// return the finger print id after being recorginised 
       
     } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
         Serial.println("Communication error");
-         indicator.error();
         return p;
     } else if (p == FINGERPRINT_NOTFOUND) {
         Serial.println("Did not find a match");
-        lcd1.printMessage("Did not find a match", 0);
-         indicator.error();
         return p;
     } else {
         Serial.println("Unknown error");
