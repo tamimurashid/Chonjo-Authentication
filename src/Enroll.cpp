@@ -18,6 +18,40 @@ uint8_t Enroll::enrollFingerprint(uint8_t id, String name) {
     return getFingerprintEnroll(id);
 }
 
+void Enroll::enrollRFIDUser(String name) {
+    // Wait for the RFID data to come in via Serial communication
+    Serial.println("Waiting for RFID tag...");
+    while (Serial.available() == 0) {
+        delay(100);
+    }
+
+    String rfidTag = Serial.readStringUntil('\n');  // Read RFID tag ID
+    rfidTag.trim();
+
+    if (rfidTag.length() > 0) {
+        uint8_t id = getAvailableID();
+        if (id != 255) {  // Check if an available ID is found
+            Serial.print("RFID Tag: ");
+            Serial.println(rfidTag);
+            enrollFingerprint(id, name);  // Enroll with available ID and name
+        } else {
+            Serial.println("No available ID slots.");
+        }
+    } else {
+        Serial.println("No RFID tag received.");
+    }
+}
+
+uint8_t Enroll::getAvailableID() {
+    for (int i = 1; i <= MAX_ID; i++) {
+        if (!usedIDs[i - 1]) {
+            usedIDs[i - 1] = true;
+            return i;
+        }
+    }
+    return 255;  // Return 255 if no available ID is found
+}
+
 uint8_t Enroll::getFingerprintEnroll(uint8_t id) {
     int p = -1;
     Serial.print("Waiting for valid finger to enroll as #");
