@@ -6,7 +6,7 @@
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
 
-SoftwareSerial mySerial(2, 3);
+SoftwareSerial mySerial(D1, D2);
 
 #else
 // On Leonardo/M0/etc, others with hardware serial, use hardware serial!
@@ -57,8 +57,15 @@ void setup() {
   Serial.print(F("Device address: ")); Serial.println(finger.device_addr, HEX);
   Serial.print(F("Packet len: ")); Serial.println(finger.packet_len);
   Serial.print(F("Baud rate: ")); Serial.println(finger.baud_rate);
-}
+}/*--------------------------------------------------------------------
 
+ This for delete finger print id 
+
+/----------------------------------------------------------------------
+*/
+//--------------------------------------------------------------------
+
+//--------------------------------------------------------------------
 uint8_t readnumber(void) {
   uint8_t num = 0;
 
@@ -68,7 +75,7 @@ uint8_t readnumber(void) {
   }
   return num;
 }
-//------------------------------------------
+//------------------------------------------------------------------------
 
 uint8_t getFingerprintEnroll() {
 
@@ -256,7 +263,7 @@ void rfidAuthentication(){
 
 }
 void loop() {
-    rfidAuthentication();
-    enrollfingerprint();
+    //rfidAuthentication();
+    //enrollfingerprint();
   
 }
