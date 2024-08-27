@@ -28,7 +28,10 @@ MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
 MFRC522::MIFARE_Key key;
 
 String tag;
-
+//---------------------------------------------------------------------------
+//  Beggining of void setup for pin configuration and run once the 
+// codes  
+//---------------------------------------------------------------------------
 void setup() {
   Serial.begin(9600);
   SPI.begin(); // Init SPI bus
@@ -65,7 +68,6 @@ void setup() {
 */
 //--------------------------------------------------------------------
 
-//--------------------------------------------------------------------
 uint8_t readnumber(void) {
   uint8_t num = 0;
 
@@ -76,9 +78,44 @@ uint8_t readnumber(void) {
   return num;
 }
 //------------------------------------------------------------------------
+uint8_t deleteFingerprint(uint8_t id) {
+  uint8_t p = -1;
+
+  p = finger.deleteModel(id);
+
+  if (p == FINGERPRINT_OK) {
+    Serial.println("Deleted!");
+  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    Serial.println("Communication error");
+  } else if (p == FINGERPRINT_BADLOCATION) {
+    Serial.println("Could not delete in that location");
+  } else if (p == FINGERPRINT_FLASHERR) {
+    Serial.println("Error writing to flash");
+  } else {
+    Serial.print("Unknown error: 0x"); Serial.println(p, HEX);
+  }
+
+  return p;
+}
+
+//------------------------------------------------------------------------
+void deleteIdfingerprint(){
+     Serial.println("Please type in the ID # (from 1 to 127) you want to delete...");
+  uint8_t id = readnumber();
+  if (id == 0) {// ID #0 not allowed, try again!
+     return;
+  }
+
+  Serial.print("Deleting ID #");
+  Serial.println(id);
+
+  deleteFingerprint(id);
+}
+
+
+//--------------------------------------------------------------------
 
 uint8_t getFingerprintEnroll() {
-
   int p = -1;
   Serial.print("Waiting for valid finger to enroll as #"); Serial.println(id);
   while (p != FINGERPRINT_OK) {
@@ -265,5 +302,6 @@ void rfidAuthentication(){
 void loop() {
     //rfidAuthentication();
     //enrollfingerprint();
+    //deleteIdfingerprint();
   
 }
