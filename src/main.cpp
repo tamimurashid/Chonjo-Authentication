@@ -273,31 +273,27 @@ void  enrollfingerprint(){
 
 
 //----------------------------------------
-void rfidAuthentication(){
-    if ( ! rfid.PICC_IsNewCardPresent())
-    return;
-  if (rfid.PICC_ReadCardSerial()) {
-    for (byte i = 0; i < 4; i++) {
-      tag += rfid.uid.uidByte[i];
-    }
-    Serial.println(tag);
-    if (tag == "11093393") {
-      Serial.println("Access Granted!");
-      digitalWrite(D8, HIGH);
-      delay(1000);
-      digitalWrite(D8, LOW);
-      delay(1000);
-    } else {
-      Serial.println("Access Denied!");
-      digitalWrite(D8, HIGH);
-      delay(2000);
-      digitalWrite(D8, LOW);
-    }
-    tag = "";
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
-  }
+bool rfidAuthentication() {
+    if (!rfid.PICC_IsNewCardPresent()) return false;
 
+    if (rfid.PICC_ReadCardSerial()) {
+        tag = "";
+        for (byte i = 0; i < 4; i++) {
+            tag += rfid.uid.uidByte[i];
+        }
+        Serial.println(tag);
+        rfid.PICC_HaltA();
+        rfid.PCD_StopCrypto1();
+
+        if (tag == "11093393") {
+            Serial.println("RFID tag matched!");
+            return true;
+        } else {
+            Serial.println("RFID tag did not match.");
+            return false;
+        }
+    }
+    return false;
 }
 //--------------------------------------------------------------------
 
@@ -401,10 +397,23 @@ void loop() {
         Serial.println("Entering continuous authentication mode.");
       
         while (true) {
-                rfidAuthentication();
+            bool rfidMatch = rfidAuthentication();
+            delay(1000);  // Check RFID first
+            int fingerprintID = getFingerprintID(); // Check fingerprint
+            delay(1000); 
+
+            if (rfidMatch && fingerprintID > 0) {
+                Serial.println("Scan your card then scan you finger print ");
+                Serial.println("Both RFID and fingerprint matched!");
+                digitalWrite(D8, HIGH);
                 delay(1000);
-                getFingerprintID();
-                delay(1000); 
+                digitalWrite(D8, LOW);
+            } else {
+                Serial.println("Authentication failed.");
+                // digitalWrite(D8, HIGH);
+                // delay(2000);
+                // digitalWrite(D8, LOW);
+            }
            
             // Check for 'S' command to stop authentication mode
             if (Serial.available() > 0) {
