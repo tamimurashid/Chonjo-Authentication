@@ -305,7 +305,7 @@ uint8_t getFingerprintID() {
       Serial.println("Image taken");
       break;
     case FINGERPRINT_NOFINGER:
-      Serial.println("No finger detected");
+      //Serial.println("No finger detected");
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
@@ -397,14 +397,20 @@ void loop() {
         Serial.println("Entering continuous authentication mode.");
       
         while (true) {
+            Serial.println("Scan your card then scan you finger print ");
+            delay(2000);
+            Serial.println("Start with your Id: ");
+            delay(2000);
             bool rfidMatch = rfidAuthentication();
-            delay(1000);  // Check RFID first
+            delay(2000);
+            Serial.println("Now scan your finger: ");
+            delay(2000);  // Check RFID first
             int fingerprintID = getFingerprintID(); // Check fingerprint
-            delay(1000); 
+            delay(2000); 
 
             if (rfidMatch && fingerprintID > 0) {
-                Serial.println("Scan your card then scan you finger print ");
                 Serial.println("Both RFID and fingerprint matched!");
+                delay(1000);
                 digitalWrite(D8, HIGH);
                 delay(1000);
                 digitalWrite(D8, LOW);
