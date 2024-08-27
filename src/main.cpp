@@ -20,7 +20,7 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 uint8_t id;
 
-
+String readCommand();
 constexpr uint8_t RST_PIN = D3;     // Configurable, see typical pin layout above
 constexpr uint8_t SS_PIN = D4;     // Configurable, see typical pin layout above
 
@@ -299,9 +299,149 @@ void rfidAuthentication(){
   }
 
 }
-void loop() {
-    //rfidAuthentication();
-    //enrollfingerprint();
-    //deleteIdfingerprint();
-  
+//--------------------------------------------------------------------
+
+//--------------------------------------------------------------------
+uint8_t getFingerprintID() {
+  uint8_t p = finger.getImage();
+  switch (p) {
+    case FINGERPRINT_OK:
+      Serial.println("Image taken");
+      break;
+    case FINGERPRINT_NOFINGER:
+      Serial.println("No finger detected");
+      return p;
+    case FINGERPRINT_PACKETRECIEVEERR:
+      Serial.println("Communication error");
+      return p;
+    case FINGERPRINT_IMAGEFAIL:
+      Serial.println("Imaging error");
+      return p;
+    default:
+      Serial.println("Unknown error");
+      return p;
+  }
+
+  // OK success!
+
+  p = finger.image2Tz();
+  switch (p) {
+    case FINGERPRINT_OK:
+      Serial.println("Image converted");
+      break;
+    case FINGERPRINT_IMAGEMESS:
+      Serial.println("Image too messy");
+      return p;
+    case FINGERPRINT_PACKETRECIEVEERR:
+      Serial.println("Communication error");
+      return p;
+    case FINGERPRINT_FEATUREFAIL:
+      Serial.println("Could not find fingerprint features");
+      return p;
+    case FINGERPRINT_INVALIDIMAGE:
+      Serial.println("Could not find fingerprint features");
+      return p;
+    default:
+      Serial.println("Unknown error");
+      return p;
+  }
+
+  // OK converted!
+  p = finger.fingerSearch();
+  if (p == FINGERPRINT_OK) {
+    Serial.println("Found a print match!");
+  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    Serial.println("Communication error");
+    return p;
+  } else if (p == FINGERPRINT_NOTFOUND) {
+    Serial.println("Did not find a match");
+    return p;
+  } else {
+    Serial.println("Unknown error");
+    return p;
+  }
+
+  // found a match!
+  Serial.print("Found ID #"); Serial.print(finger.fingerID);
+  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+
+  return finger.fingerID;
 }
+
+// returns -1 if failed, otherwise returns ID #
+int getFingerprintIDez() {
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  // found a match!
+  Serial.print("Found ID #"); Serial.print(finger.fingerID);
+  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+  return finger.fingerID;
+}
+
+
+
+//--------------------------------------------------------------------
+void loop() {
+      
+     Serial.println("Waiting for command...");
+     String command = readCommand();
+
+    if (command == "ENROLL" || command == "enroll" || command == "2") {
+        Serial.println("Starting enrollment...");
+        enrollfingerprint();
+       
+    } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
+        Serial.println("Entering continuous authentication mode.");
+      
+        while (true) {
+                rfidAuthentication();
+                delay(1000);
+                getFingerprintID();
+                delay(1000); 
+           
+            // Check for 'S' command to stop authentication mode
+            if (Serial.available() > 0) {
+                String stopCommand = readCommand();
+                if (stopCommand == "S" || stopCommand == "s" || stopCommand == "0") {
+                    Serial.println("Exiting authentication mode.");
+                    break;
+                }
+            }
+            delay(100); // Add a slight delay to prevent rapid looping
+        }
+    } else if (command == "DELETE" || command == "delete" || command == "4") {
+        Serial.println("Starting deletion...");
+        deleteIdfingerprint();
+        // keypad functionality for delete 
+        // rfid functionality for delete 
+    } else if (command == "EXIT"  || command == "0") {
+        Serial.println("Exiting...");
+        
+        while (1);
+    } else {
+        Serial.println("Invalid command, please try again.");
+    }
+
+    delay(1000); 
+}
+
+// Function definition
+String readCommand() {
+    String command = "";
+    while (command.length() == 0) {
+        if (Serial.available() > 0) {
+            command = Serial.readStringUntil('\n');
+            command.trim(); // Remove any whitespace or newline characters
+            Serial.flush(); // Flush the serial buffer to clear any additional data
+        }
+    }
+    return command;
+}
+
