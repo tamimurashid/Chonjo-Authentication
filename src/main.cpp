@@ -305,7 +305,7 @@ uint8_t getFingerprintID() {
       Serial.println("Image taken");
       break;
     case FINGERPRINT_NOFINGER:
-      //Serial.println("No finger detected");
+      Serial.println("No finger detected");
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
@@ -394,52 +394,43 @@ void loop() {
         enrollfingerprint();
        
     } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
-    Serial.println("Entering continuous authentication mode.");
-  
-    while (true) {
-
-        Serial.println("Scan your fingerprint.");
-        int fingerprintID = -1;
-        
-        // Wait until a valid fingerprint is scanned
-        while (fingerprintID <= 0) {
-            fingerprintID = getFingerprintID();
-            if (fingerprintID <= 0) {
-                Serial.println("Fingerprint not recognized. Please try again.");
-            }
-            delay(100); // Add a small delay to avoid rapid looping
-        }
-        Serial.println("Now scan your card.");
-        bool rfidMatch = false;
-        
-        // Wait until RFID is scanned
-        while (!rfidMatch) {
-            rfidMatch = rfidAuthentication();
-            delay(1000); // Add a small delay to avoid rapid looping
-        }
-
-        Serial.println("RFID tag matched!");
-        
-
-        if (rfidMatch && fingerprintID > 0) {
-            Serial.println("Both RFID and fingerprint matched!");
-            digitalWrite(D8, HIGH);
+        Serial.println("Entering continuous authentication mode.");
+      
+        while (true) {
+            Serial.println("Scan your card then scan you finger print ");
+            delay(2000);
+            Serial.println("Start with your Id: ");
             delay(1000);
-            digitalWrite(D8, LOW);
-        } else {
-            Serial.println("Authentication failed.");
-        }
-       
-        // Check for 'S' command to stop authentication mode
-        if (Serial.available() > 0) {
-            String stopCommand = readCommand();
-            if (stopCommand == "S" || stopCommand == "s" || stopCommand == "0") {
-                Serial.println("Exiting authentication mode.");
-                break;
+            bool rfidMatch = rfidAuthentication();
+            delay(1000);
+            Serial.println("Now: ");  // Check RFID first
+            int fingerprintID = getFingerprintID(); // Check fingerprint
+            delay(1000); 
+
+            if (rfidMatch && fingerprintID > 0) {
+                Serial.println("Both RFID and fingerprint matched!");
+                delay(1000);
+                digitalWrite(D8, HIGH);
+                delay(1000);
+                digitalWrite(D8, LOW);
+            } else {
+                Serial.println("Authentication failed.");
+                // digitalWrite(D8, HIGH);
+                // delay(2000);
+                // digitalWrite(D8, LOW);
             }
+           
+            // Check for 'S' command to stop authentication mode
+            if (Serial.available() > 0) {
+                String stopCommand = readCommand();
+                if (stopCommand == "S" || stopCommand == "s" || stopCommand == "0") {
+                    Serial.println("Exiting authentication mode.");
+                    break;
+                }
+            }
+            delay(100); // Add a slight delay to prevent rapid looping
         }
-    }
-} else if (command == "DELETE" || command == "delete" || command == "4") {
+    } else if (command == "DELETE" || command == "delete" || command == "4") {
         Serial.println("Starting deletion...");
         deleteIdfingerprint();
         // keypad functionality for delete 
