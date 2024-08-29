@@ -4,8 +4,8 @@
 #include <SoftwareSerial.h>
 
 // Pin definitions
-constexpr uint8_t RST_PIN = D3;  // Configurable, see typical pin layout above
-constexpr uint8_t SS_PIN = D4;   // Configurable, see typical pin layout above
+constexpr uint8_t RST_PIN = D3;
+constexpr uint8_t SS_PIN = D4;
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
 SoftwareSerial mySerial(D1, D2);
@@ -14,22 +14,21 @@ SoftwareSerial mySerial(D1, D2);
 #endif
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
-MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the MFRC522 class
+MFRC522 rfid(SS_PIN, RST_PIN);
 
 uint8_t id;
 String tag;
 
 void setup() {
   Serial.begin(9600);
-  SPI.begin(); // Init SPI bus
-  rfid.PCD_Init(); // Init MFRC522
+  SPI.begin();
+  rfid.PCD_Init();
   pinMode(D8, OUTPUT);
-  while (!Serial);  // For Yun/Leo/Micro/Zero/...
+  while (!Serial);
   delay(100);
 
   Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
 
-  // Set the data rate for the sensor serial port
   finger.begin(57600);
 
   if (finger.verifyPassword()) {
@@ -225,7 +224,6 @@ void enrollfingerprint() {
 
 bool rfidAuthentication() {
   if (!rfid.PICC_IsNewCardPresent()) {
-    //Serial.println("No new card present.");
     return false;
   }
   if (rfid.PICC_ReadCardSerial()) {
@@ -300,7 +298,9 @@ uint8_t getFingerprintID() {
   } else {
     Serial.println("Unknown error");
   }
-  return finger.fingerID;
+   int fingerprintID = finger.fingerID;
+
+  return fingerprintID;
 }
 
 String readCommand() {
@@ -325,40 +325,65 @@ void loop() {
 
   } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
     Serial.println("Entering continuous authentication mode.");
-    while (true) {
+    bool authenticated = false;
+    
+    while (!authenticated) {
       Serial.println("Scan your fingerprint.");
-      int fingerprintID = -1;
-      while (fingerprintID <= 0) {
-        fingerprintID = getFingerprintID();
-        if (fingerprintID <= 0) {
-          Serial.println("Fingerprint not recognized. Please try again.");
+
+      int fingerprintID = getFingerprintID();
+  
+       while (fingerprintID <= 0) {
+          Serial.println("No valid fingerprint detected. Please try again.");
+          delay(1000); // Wait for a while before retrying
+          fingerprintID = getFingerprintID(); // Retry getting fingerprint ID
         }
-        delay(100); // Add a small delay to avoid rapid looping
-      }
+  
+        Serial.print("Fingerprint ID detected: ");
+        Serial.println(fingerprintID);
 
-      Serial.println("Now scan your card.");
-      bool rfidMatch = false;
-      while (!rfidMatch) {
-        rfidMatch = rfidAuthentication();
-        delay(1000); // Add a small delay to avoid rapid looping
-      }
+        Serial.println("Now scan your card.");
+      // bool rfidMatch = false;
+       
 
-      Serial.println("RFID tag matched!");
 
-      if (rfidMatch && fingerprintID > 0) {
-        Serial.println("Both RFID and fingerprint matched!");
-        digitalWrite(D8, HIGH);
-        delay(1000);
-        digitalWrite(D8, LOW);
-      } else {
-        Serial.println("Authentication failed.");
-      }
+      // int fingerprintID = -1;
+      // unsigned long startTime = millis();
+      
+      // while (fingerprintID <= 0 && millis() - startTime < 10000) { // 10-second timeout
+      //   fingerprintID = getFingerprintID();
+      //   delay(100); // Add a small delay to avoid rapid looping
+      // }
+      
+      // if (fingerprintID <= 0) {
+      //   Serial.println("Fingerprint not recognized. Please try again.");
+      //   continue;
+      // }
+
+      // Serial.println("Now scan your card.");
+      // bool rfidMatch = false;
+      // startTime = millis();
+      
+      // while (!rfidMatch && millis() - startTime < 10000) { // 10-second timeout
+      //   rfidMatch = rfidAuthentication();
+      //   delay(1000); // Add a small delay to avoid rapid looping
+      // }
+      
+      // if (!rfidMatch) {
+      //   Serial.println("RFID tag not recognized. Please try again.");
+      //   continue;
+      // }
+
+      // Serial.println("Both RFID and fingerprint matched!");
+      // digitalWrite(D8, HIGH);
+      // delay(1000);
+      // digitalWrite(D8, LOW);
+      // authenticated = true;
 
       if (Serial.available() > 0) {
         String stopCommand = readCommand();
         if (stopCommand == "S" || stopCommand == "s" || stopCommand == "0") {
           Serial.println("Exiting authentication mode.");
-          break;
+          authenticated = true;
         }
       }
     }
