@@ -146,6 +146,7 @@ void loop() {
     if (enteredPassword == "123456789") {
       Serial.println("Access granted!");
       scrollmessage("Thank you ", "Access granted!"); 
+      mySerial.println("1");
       digitalWrite(1, HIGH); // Trigger relay or unlock door
       delay(5000); // Keep the door unlocked for 5 seconds
       digitalWrite(1, LOW); // Lock the door again
