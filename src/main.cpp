@@ -395,12 +395,13 @@ void loop() {
        
     } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
         Serial.println("Entering continuous authentication mode.");
+        bool rfidMatch = rfidAuthentication();
       
         while (true) {
             Serial.println("Scan your card then scan you finger print ");
-            delay(2000);
-            Serial.println("Start with your Id: ");
-            delay(1000);
+            // delay(2000);
+            // Serial.println("Start with your Id: ");
+            // delay(1000);
             bool rfidMatch = rfidAuthentication();
             delay(1000);
             Serial.println("Now: ");  // Check RFID first
