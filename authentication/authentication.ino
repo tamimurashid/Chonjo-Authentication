@@ -3,6 +3,10 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(3, 4);
+
 
 // Pin definitions for Arduino Uno
 constexpr uint8_t RST_PIN = 0;  // RST pin for RFID
