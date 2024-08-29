@@ -78,6 +78,7 @@ uint8_t rfidAuthentication() {
 
 void setup() {
   Serial.begin(9600);
+  mySerial.begin(9600);
   SPI.begin();
   rfid.PCD_Init();
   pinMode(8, OUTPUT); // Pin for triggering relay or LED
