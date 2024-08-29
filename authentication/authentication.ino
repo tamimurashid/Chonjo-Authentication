@@ -90,6 +90,9 @@ void loop() {
   uint8_t rfidStatus = rfidAuthentication();
   if (rfidStatus > 1) {  // RFID tag matched
     lcd.clear();
+    lcd.print("card matched ..");
+    delay(1000);
+    lcd.clear();
     lcd.print("Enter Password:");
     Serial.println("Enter Password:");
     enteredPassword = "";
@@ -97,7 +100,7 @@ void loop() {
     while (true) {
       key = keypad.getKey();
       if (key) {
-        if (key == 'A') {
+        if (key == '#') {
           break;  // Enter key pressed
         }
         enteredPassword += key;
@@ -119,6 +122,9 @@ void loop() {
     } else {
       Serial.println("Access denied!");
       lcd.print("Access denied!");
+      delay(1000);
+      lcd.clear();
+      lcd.print("Scan id again..");
     }
   }
   
