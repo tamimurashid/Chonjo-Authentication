@@ -224,16 +224,20 @@ void enrollfingerprint() {
 }
 
 bool rfidAuthentication() {
-  if (!rfid.PICC_IsNewCardPresent()) return false;
+  if (!rfid.PICC_IsNewCardPresent()) {
+    //Serial.println("No new card present.");
+    return false;
+  }
   if (rfid.PICC_ReadCardSerial()) {
     tag = "";
-    for (byte i = 0; i < 4; i++) {
+    for (byte i = 0; i < rfid.uid.size; i++) {
       tag += rfid.uid.uidByte[i];
     }
+    Serial.print("RFID Tag: ");
     Serial.println(tag);
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
-    if (tag == "11093393") {
+    if (tag == "11093393") { // Replace this with your expected RFID tag
       Serial.println("RFID tag matched!");
       return true;
     } else {
@@ -241,6 +245,7 @@ bool rfidAuthentication() {
       return false;
     }
   }
+  Serial.println("Failed to read card.");
   return false;
 }
 
