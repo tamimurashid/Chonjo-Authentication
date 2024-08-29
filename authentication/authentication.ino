@@ -150,6 +150,8 @@ void loop() {
 
     } else {
       Serial.println("Access denied!");
+      scrollmessage("Error !! ", "Wrong password");
+      delay(100);
       scrollmessage("Ooops !! ", "Access denied!"); 
       delay(100);
       lcd.clear();
