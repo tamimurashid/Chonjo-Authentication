@@ -3,10 +3,6 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
-#include <SoftwareSerial.h>
-
-SoftwareSerial mySerial(3, 4);
-
 
 // Pin definitions for Arduino Uno
 constexpr uint8_t RST_PIN = 0;  // RST pin for RFID
@@ -67,6 +63,7 @@ uint8_t rfidAuthentication() {
       Serial.println("RFID tag did not match.");
       lcd.clear();
       lcd.print("card/ tag  not match!");
+      lcd.clear();
       return 1; // RFID tag mismatch
     }
   }
@@ -86,8 +83,20 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.clear();
-  lcd.print("Ready...");
-  delay(1000);
+  scrollmessage("Hi there ", "please scan  Id "); 
+  delay(100);
+  lcd.print("Ready ");
+}
+
+void scrollmessage(String title, String message) {
+  for (int position = 16; position >= 0; position--) {
+    lcd.clear();               // Clear the LCD
+    lcd.setCursor(0, 0);       // Set cursor to row 0, column 0
+    lcd.print(title);          // Print title in the first row
+    lcd.setCursor(position, 1); // Set cursor to row 1 at current position
+    lcd.print(message);        // Print message in the second row
+    delay(200);                // Adjust delay for scrolling speed
+  }
 }
 
 void loop() {
@@ -133,13 +142,16 @@ void loop() {
     
     if (enteredPassword == "123456789") {
       Serial.println("Access granted!");
-      lcd.print("Access granted!");
+      scrollmessage("Thank you ", "Access granted!"); 
       digitalWrite(1, HIGH); // Trigger relay or unlock door
       delay(5000); // Keep the door unlocked for 5 seconds
       digitalWrite(1, LOW); // Lock the door again
+      lcd.clear();
+      lcd.print("Hi there! ");
+
     } else {
       Serial.println("Access denied!");
-      lcd.print("Access denied!");
+      scrollmessage("Ooops !! ", "Access denied!"); 
       delay(100);
       lcd.clear();
       lcd.print("Scan id again..");

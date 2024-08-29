@@ -1,55 +1,29 @@
-/***************************************************
-  This is an example sketch for our optical Fingerprint sensor
-
-  Designed specifically to work with the Adafruit BMP085 Breakout
-  ----> http://www.adafruit.com/products/751
-
-  These displays use TTL Serial to communicate, 2 pins are required to
-  interface
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.
-  BSD license, all text above must be included in any redistribution
- ****************************************************/
-
-
 #include <Adafruit_Fingerprint.h>
-
+#include <SoftwareSerial.h>
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-// For UNO and others without hardware serial, we must use software serial...
-// pin #2 is IN from sensor (GREEN wire)
-// pin #3 is OUT from arduino  (WHITE wire)
-// Set up the serial port to use softwareserial..
-SoftwareSerial mySerial(D1, D2);
-
+SoftwareSerial mySerial(D1, D2);  // D1 is RX, D2 is TX
 #else
-// On Leonardo/M0/etc, others with hardware serial, use hardware serial!
-// #0 is green wire, #1 is white
 #define mySerial Serial1
-
 #endif
-
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 #define TRIGGER_PIN D8
+
 uint8_t getFingerprintID();
 int getFingerprintIDez();
 String readCommand();
 
-void setup()
-{
+void setup() {
   Serial.begin(9600);
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
   delay(100);
-  Serial.println("\n\nAdafruit finger detect test");
+  Serial.println("\n\nAdafruit Fingerprint Sensor Test");
 
-  // set the data rate for the sensor serial port
   finger.begin(57600);
   delay(5);
+
   if (finger.verifyPassword()) {
     Serial.println("Found fingerprint sensor!");
   } else {
@@ -70,34 +44,36 @@ void setup()
   finger.getTemplateCount();
 
   if (finger.templateCount == 0) {
-    Serial.print("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
-  }
-  else {
+    Serial.println("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
+  } else {
+    Serial.print("Sensor contains "); 
+    Serial.print(finger.templateCount); 
+    Serial.println(" templates");
     Serial.println("Waiting for valid finger...");
-      Serial.print("Sensor contains "); Serial.print(finger.templateCount); Serial.println(" templates");
   }
+
+  pinMode(TRIGGER_PIN, OUTPUT);
+  digitalWrite(TRIGGER_PIN, LOW);
 }
 
-void loop()                     // run over and over again
-{ 
+void loop() {
   Serial.println("Waiting for command...");
   String command = readCommand();
 
   if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
     Serial.println("Performing authentication...");
-     getFingerprintID();
-     //delay(50);    
-     int finger =  getFingerprintIDez();
-        while(finger == -1){
-            digitalWrite(TRIGGER_PIN, HIGH); // Trigger pin D8
-            Serial.println("Fingerprint matched, access granted!");
-            Serial.println("SUCCESS");
-            digitalWrite(TRIGGER_PIN, HIGH);
-            delay(1000); // Keep the pin high for 1 second
-            digitalWrite(TRIGGER_PIN, LOW);
-
-        }     
-    
+    delay(1000);
+    int fingerID = getFingerprintIDez();
+    if (fingerID > -1) {
+      digitalWrite(TRIGGER_PIN, HIGH); // Trigger pin D8
+      Serial.println("Fingerprint matched, access granted!");
+      Serial.println("SUCCESS");
+      delay(5000); // Keep the pin high for 1 second
+      digitalWrite(TRIGGER_PIN, LOW);
+    } else {
+      Serial.println("Fingerprint did not match.");
+      Serial.println("ERROR");
+    }
   } else if (command == "EXIT" || command == "0") {
     Serial.println("Exiting...");
     while (1); // Stop the loop
@@ -108,96 +84,45 @@ void loop()                     // run over and over again
 
 uint8_t getFingerprintID() {
   uint8_t p = finger.getImage();
-  switch (p) {
-    case FINGERPRINT_OK:
-      Serial.println("Image taken");
-      break;
-    case FINGERPRINT_NOFINGER:
-      Serial.println("No finger detected");
-      return p;
-    case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println("Communication error");
-      return p;
-    case FINGERPRINT_IMAGEFAIL:
-      Serial.println("Imaging error");
-      return p;
-    default:
-      Serial.println("Unknown error");
-      return p;
+  if (p == FINGERPRINT_NOFINGER) {
+    Serial.println("No finger detected");
+    return p;
+  } else if (p != FINGERPRINT_OK) {
+    Serial.println("Image capture failed");
+    return p;
   }
-
-  // OK success!
 
   p = finger.image2Tz();
-  switch (p) {
-    case FINGERPRINT_OK:
-      Serial.println("Image converted");
-      break;
-    case FINGERPRINT_IMAGEMESS:
-      Serial.println("Image too messy");
-      return p;
-    case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println("Communication error");
-      return p;
-    case FINGERPRINT_FEATUREFAIL:
-      Serial.println("Could not find fingerprint features");
-      return p;
-    case FINGERPRINT_INVALIDIMAGE:
-      Serial.println("Could not find fingerprint features");
-      return p;
-    default:
-      Serial.println("Unknown error");
-      return p;
+  if (p != FINGERPRINT_OK) {
+    Serial.println("Image conversion failed");
+    return p;
   }
 
-  // OK converted!
   p = finger.fingerSearch();
   if (p == FINGERPRINT_OK) {
-    Serial.println("Found a print match!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_NOTFOUND) {
-    Serial.println("Did not find a match");
-    Serial.println("Error:111");
-    return p;
+    Serial.println("Found a fingerprint match!");
   } else {
-    Serial.println("Unknown error");
-    return p;
+    Serial.println("No fingerprint match found");
   }
 
-  // found a match!
-  Serial.print("Found ID #"); Serial.print(finger.fingerID);
-  Serial.print(" with confidence of "); Serial.println(finger.confidence);
-   digitalWrite(TRIGGER_PIN, HIGH); // Trigger pin D8
-  Serial.println("Fingerprint matched, access granted!");
-  Serial.println("SUCCESS");
-  digitalWrite(TRIGGER_PIN, HIGH);
-  delay(1000); // Keep the pin high for 1 second
-  digitalWrite(TRIGGER_PIN, LOW);
-
   return finger.fingerID;
 }
 
-// returns -1 if failed, otherwise returns ID #
+// Returns -1 if failed, otherwise returns ID #
 int getFingerprintIDez() {
   uint8_t p = finger.getImage();
-  if (p != FINGERPRINT_OK)  return -1;
+  if (p != FINGERPRINT_OK) return -1;
 
   p = finger.image2Tz();
-  if (p != FINGERPRINT_OK)  return -1;
+  if (p != FINGERPRINT_OK) return -1;
 
   p = finger.fingerFastSearch();
-  if (p != FINGERPRINT_OK)  return -1;
+  if (p != FINGERPRINT_OK) return -1;
 
-  // found a match!
   Serial.print("Found ID #"); Serial.print(finger.fingerID);
   Serial.print(" with confidence of "); Serial.println(finger.confidence);
   return finger.fingerID;
- 
 }
-
-
 
 String readCommand() {
   String command = "";
@@ -210,4 +135,3 @@ String readCommand() {
   }
   return command;
 }
-
