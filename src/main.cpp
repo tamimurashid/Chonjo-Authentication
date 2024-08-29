@@ -10,15 +10,16 @@ SoftwareSerial mySerial(D1, D2);  // D1 is RX, D2 is TX
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 #define TRIGGER_PIN D8
-
+void handleCommand();
 uint8_t getFingerprintID();
 int getFingerprintIDez();
-String readCommand();
+String command = "";
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);  // For Yun/Leo/Micro/Zero/...
-  delay(100);
+  mySerial.begin(57600);
+  while (!Serial);  // Wait for Serial to be ready
+
   Serial.println("\n\nAdafruit Fingerprint Sensor Test");
 
   finger.begin(57600);
@@ -57,18 +58,28 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Waiting for command...");
-  String command = readCommand();
+  if (Serial.available() > 0) {
+    char inChar = (char)Serial.read();
+    if (inChar == '\n') {
+      handleCommand();
+      command = "";  // Clear the command after handling it
+    } else {
+      command += inChar;
+    }
+  }
+}
 
+void handleCommand() {
+  command.trim();
+  
   if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
     Serial.println("Performing authentication...");
-    delay(1000);
     int fingerID = getFingerprintIDez();
     if (fingerID > -1) {
       digitalWrite(TRIGGER_PIN, HIGH); // Trigger pin D8
       Serial.println("Fingerprint matched, access granted!");
       Serial.println("SUCCESS");
-      delay(5000); // Keep the pin high for 1 second
+      delay(1000); // Keep the pin high for 1 second
       digitalWrite(TRIGGER_PIN, LOW);
     } else {
       Serial.println("Fingerprint did not match.");
@@ -122,16 +133,4 @@ int getFingerprintIDez() {
   Serial.print("Found ID #"); Serial.print(finger.fingerID);
   Serial.print(" with confidence of "); Serial.println(finger.confidence);
   return finger.fingerID;
-}
-
-String readCommand() {
-  String command = "";
-  while (command.length() == 0) {
-    if (Serial.available() > 0) {
-      command = Serial.readStringUntil('\n');
-      command.trim(); // Remove any whitespace or newline characters
-      Serial.flush(); // Flush the serial buffer to clear any additional data
-    }
-  }
-  return command;
 }
