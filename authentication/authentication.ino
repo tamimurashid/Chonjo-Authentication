@@ -63,8 +63,6 @@ uint8_t rfidAuthentication() {
       Serial.println("RFID tag did not match.");
       lcd.clear();
       scrollmessage("Warning !!"," card/ tag  not match!"); 
-     
-      lcd.clear();
       return 1; // RFID tag mismatch
     }
   }
