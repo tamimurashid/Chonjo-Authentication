@@ -147,7 +147,7 @@ void loop() {
       delay(5000); // Keep the door unlocked for 5 seconds
       digitalWrite(1, LOW); // Lock the door again
       lcd.clear();
-      lcd.print("Hi there! ");
+      scrollmessage("Hi there ", "please scan  Id ");
 
     } else {
       Serial.println("Access denied!");
