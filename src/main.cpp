@@ -3,35 +3,22 @@
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
 
+// Pin definitions
+constexpr uint8_t RST_PIN = D3;  // Configurable, see typical pin layout above
+constexpr uint8_t SS_PIN = D4;   // Configurable, see typical pin layout above
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-
 SoftwareSerial mySerial(D1, D2);
-
 #else
-// On Leonardo/M0/etc, others with hardware serial, use hardware serial!
-// #0 is green wire, #1 is white
 #define mySerial Serial1
-
 #endif
 
-
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
+MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the MFRC522 class
 
 uint8_t id;
-
-String readCommand();
-constexpr uint8_t RST_PIN = D3;     // Configurable, see typical pin layout above
-constexpr uint8_t SS_PIN = D4;     // Configurable, see typical pin layout above
-
-MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
-MFRC522::MIFARE_Key key;
-
 String tag;
-//---------------------------------------------------------------------------
-//  Beggining of void setup for pin configuration and run once the 
-// codes  
-//---------------------------------------------------------------------------
+
 void setup() {
   Serial.begin(9600);
   SPI.begin(); // Init SPI bus
@@ -39,9 +26,10 @@ void setup() {
   pinMode(D8, OUTPUT);
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
   delay(100);
+
   Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
 
-  // set the data rate for the sensor serial port
+  // Set the data rate for the sensor serial port
   finger.begin(57600);
 
   if (finger.verifyPassword()) {
@@ -60,60 +48,49 @@ void setup() {
   Serial.print(F("Device address: ")); Serial.println(finger.device_addr, HEX);
   Serial.print(F("Packet len: ")); Serial.println(finger.packet_len);
   Serial.print(F("Baud rate: ")); Serial.println(finger.baud_rate);
-}/*--------------------------------------------------------------------
+}
 
- This for delete finger print id 
-
-/----------------------------------------------------------------------
-*/
-//--------------------------------------------------------------------
-
-uint8_t readnumber(void) {
+uint8_t readnumber() {
   uint8_t num = 0;
-
   while (num == 0) {
-    while (! Serial.available());
+    while (!Serial.available());
     num = Serial.parseInt();
   }
   return num;
 }
-//------------------------------------------------------------------------
+
 uint8_t deleteFingerprint(uint8_t id) {
-  uint8_t p = -1;
-
-  p = finger.deleteModel(id);
-
-  if (p == FINGERPRINT_OK) {
-    Serial.println("Deleted!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println("Communication error");
-  } else if (p == FINGERPRINT_BADLOCATION) {
-    Serial.println("Could not delete in that location");
-  } else if (p == FINGERPRINT_FLASHERR) {
-    Serial.println("Error writing to flash");
-  } else {
-    Serial.print("Unknown error: 0x"); Serial.println(p, HEX);
+  uint8_t p = finger.deleteModel(id);
+  switch (p) {
+    case FINGERPRINT_OK:
+      Serial.println("Deleted!");
+      break;
+    case FINGERPRINT_PACKETRECIEVEERR:
+      Serial.println("Communication error");
+      break;
+    case FINGERPRINT_BADLOCATION:
+      Serial.println("Could not delete in that location");
+      break;
+    case FINGERPRINT_FLASHERR:
+      Serial.println("Error writing to flash");
+      break;
+    default:
+      Serial.print("Unknown error: 0x"); Serial.println(p, HEX);
+      break;
   }
-
   return p;
 }
 
-//------------------------------------------------------------------------
-void deleteIdfingerprint(){
-     Serial.println("Please type in the ID # (from 1 to 127) you want to delete...");
+void deleteIdfingerprint() {
+  Serial.println("Please type in the ID # (from 1 to 127) you want to delete...");
   uint8_t id = readnumber();
-  if (id == 0) {// ID #0 not allowed, try again!
-     return;
+  if (id == 0) {
+    return;
   }
-
   Serial.print("Deleting ID #");
   Serial.println(id);
-
   deleteFingerprint(id);
 }
-
-
-//--------------------------------------------------------------------
 
 uint8_t getFingerprintEnroll() {
   int p = -1;
@@ -121,25 +98,23 @@ uint8_t getFingerprintEnroll() {
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
-    case FINGERPRINT_OK:
-      Serial.println("Image taken");
-      break;
-    case FINGERPRINT_NOFINGER:
-      Serial.print(".");
-      break;
-    case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println("Communication error");
-      break;
-    case FINGERPRINT_IMAGEFAIL:
-      Serial.println("Imaging error");
-      break;
-    default:
-      Serial.println("Unknown error");
-      break;
+      case FINGERPRINT_OK:
+        Serial.println("Image taken");
+        break;
+      case FINGERPRINT_NOFINGER:
+        Serial.print(".");
+        break;
+      case FINGERPRINT_PACKETRECIEVEERR:
+        Serial.println("Communication error");
+        break;
+      case FINGERPRINT_IMAGEFAIL:
+        Serial.println("Imaging error");
+        break;
+      default:
+        Serial.println("Unknown error");
+        break;
     }
   }
-
-  // OK success!
 
   p = finger.image2Tz(1);
   switch (p) {
@@ -175,25 +150,23 @@ uint8_t getFingerprintEnroll() {
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
-    case FINGERPRINT_OK:
-      Serial.println("Image taken");
-      break;
-    case FINGERPRINT_NOFINGER:
-      Serial.print(".");
-      break;
-    case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println("Communication error");
-      break;
-    case FINGERPRINT_IMAGEFAIL:
-      Serial.println("Imaging error");
-      break;
-    default:
-      Serial.println("Unknown error");
-      break;
+      case FINGERPRINT_OK:
+        Serial.println("Image taken");
+        break;
+      case FINGERPRINT_NOFINGER:
+        Serial.print(".");
+        break;
+      case FINGERPRINT_PACKETRECIEVEERR:
+        Serial.println("Communication error");
+        break;
+      case FINGERPRINT_IMAGEFAIL:
+        Serial.println("Imaging error");
+        break;
+      default:
+        Serial.println("Unknown error");
+        break;
     }
   }
-
-  // OK success!
 
   p = finger.image2Tz(2);
   switch (p) {
@@ -217,20 +190,12 @@ uint8_t getFingerprintEnroll() {
       return p;
   }
 
-  // OK converted!
-  Serial.print("Creating model for #");  Serial.println(id);
-
+  Serial.print("Creating model for #"); Serial.println(id);
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
     Serial.println("Prints matched!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_ENROLLMISMATCH) {
-    Serial.println("Fingerprints did not match");
-    return p;
   } else {
-    Serial.println("Unknown error");
+    Serial.println("Error during model creation");
     return p;
   }
 
@@ -238,66 +203,47 @@ uint8_t getFingerprintEnroll() {
   p = finger.storeModel(id);
   if (p == FINGERPRINT_OK) {
     Serial.println("Stored!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_BADLOCATION) {
-    Serial.println("Could not store in that location");
-    return p;
-  } else if (p == FINGERPRINT_FLASHERR) {
-    Serial.println("Error writing to flash");
-    return p;
   } else {
-    Serial.println("Unknown error");
+    Serial.println("Error storing fingerprint");
     return p;
   }
 
   return true;
 }
 
-
-//-----------------------------------------
-
-void  enrollfingerprint(){
-    Serial.println("Ready to enroll a fingerprint!");
-    Serial.println("Please type in the ID # (from 1 to 127) you want to save this finger as...");
-    id = readnumber();
-    if (id == 0) {// ID #0 not allowed, try again!
-        return;
-    }
-    Serial.print("Enrolling ID #");
-    Serial.println(id);
-
-    while (! getFingerprintEnroll() );
+void enrollfingerprint() {
+  Serial.println("Ready to enroll a fingerprint!");
+  Serial.println("Please type in the ID # (from 1 to 127) you want to save this finger as...");
+  id = readnumber();
+  if (id == 0) {
+    return;
+  }
+  Serial.print("Enrolling ID #");
+  Serial.println(id);
+  while (!getFingerprintEnroll());
 }
 
-
-//----------------------------------------
 bool rfidAuthentication() {
-    if (!rfid.PICC_IsNewCardPresent()) return false;
-
-    if (rfid.PICC_ReadCardSerial()) {
-        tag = "";
-        for (byte i = 0; i < 4; i++) {
-            tag += rfid.uid.uidByte[i];
-        }
-        Serial.println(tag);
-        rfid.PICC_HaltA();
-        rfid.PCD_StopCrypto1();
-
-        if (tag == "11093393") {
-            Serial.println("RFID tag matched!");
-            return true;
-        } else {
-            Serial.println("RFID tag did not match.");
-            return false;
-        }
+  if (!rfid.PICC_IsNewCardPresent()) return false;
+  if (rfid.PICC_ReadCardSerial()) {
+    tag = "";
+    for (byte i = 0; i < 4; i++) {
+      tag += rfid.uid.uidByte[i];
     }
-    return false;
+    Serial.println(tag);
+    rfid.PICC_HaltA();
+    rfid.PCD_StopCrypto1();
+    if (tag == "11093393") {
+      Serial.println("RFID tag matched!");
+      return true;
+    } else {
+      Serial.println("RFID tag did not match.");
+      return false;
+    }
+  }
+  return false;
 }
-//--------------------------------------------------------------------
 
-//--------------------------------------------------------------------
 uint8_t getFingerprintID() {
   uint8_t p = finger.getImage();
   switch (p) {
@@ -305,7 +251,6 @@ uint8_t getFingerprintID() {
       Serial.println("Image taken");
       break;
     case FINGERPRINT_NOFINGER:
-      Serial.println("No finger detected");
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
@@ -317,8 +262,6 @@ uint8_t getFingerprintID() {
       Serial.println("Unknown error");
       return p;
   }
-
-  // OK success!
 
   p = finger.image2Tz();
   switch (p) {
@@ -342,121 +285,90 @@ uint8_t getFingerprintID() {
       return p;
   }
 
-  // OK converted!
   p = finger.fingerSearch();
   if (p == FINGERPRINT_OK) {
     Serial.println("Found a print match!");
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
-    return p;
   } else if (p == FINGERPRINT_NOTFOUND) {
     Serial.println("Did not find a match");
-    return p;
   } else {
     Serial.println("Unknown error");
-    return p;
+  }
+  return finger.fingerID;
+}
+
+String readCommand() {
+  String command = "";
+  while (command.length() == 0) {
+    if (Serial.available() > 0) {
+      command = Serial.readStringUntil('\n');
+      command.trim(); // Remove any whitespace or newline characters
+      Serial.flush(); // Flush the serial buffer to clear any additional data
+    }
+  }
+  return command;
+}
+
+void loop() {
+  Serial.println("Waiting for command...");
+  String command = readCommand();
+
+  if (command == "ENROLL" || command == "enroll" || command == "2") {
+    Serial.println("Starting enrollment...");
+    enrollfingerprint();
+
+  } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
+    Serial.println("Entering continuous authentication mode.");
+    while (true) {
+      Serial.println("Scan your fingerprint.");
+      int fingerprintID = -1;
+      while (fingerprintID <= 0) {
+        fingerprintID = getFingerprintID();
+        if (fingerprintID <= 0) {
+          Serial.println("Fingerprint not recognized. Please try again.");
+        }
+        delay(100); // Add a small delay to avoid rapid looping
+      }
+
+      Serial.println("Now scan your card.");
+      bool rfidMatch = false;
+      while (!rfidMatch) {
+        rfidMatch = rfidAuthentication();
+        delay(1000); // Add a small delay to avoid rapid looping
+      }
+
+      Serial.println("RFID tag matched!");
+
+      if (rfidMatch && fingerprintID > 0) {
+        Serial.println("Both RFID and fingerprint matched!");
+        digitalWrite(D8, HIGH);
+        delay(1000);
+        digitalWrite(D8, LOW);
+      } else {
+        Serial.println("Authentication failed.");
+      }
+
+      if (Serial.available() > 0) {
+        String stopCommand = readCommand();
+        if (stopCommand == "S" || stopCommand == "s" || stopCommand == "0") {
+          Serial.println("Exiting authentication mode.");
+          break;
+        }
+      }
+    }
+
+  } else if (command == "DELETE" || command == "delete" || command == "4") {
+    Serial.println("Starting deletion...");
+    deleteIdfingerprint();
+
+  } else if (command == "EXIT" || command == "0") {
+    Serial.println("Exiting...");
+    while (1);
+    
+  } else {
+    Serial.println("Invalid command, please try again.");
   }
 
-  // found a match!
-  Serial.print("Found ID #"); Serial.print(finger.fingerID);
-  Serial.print(" with confidence of "); Serial.println(finger.confidence);
-
-  return finger.fingerID;
+  delay(1000);
 }
-
-// returns -1 if failed, otherwise returns ID #
-int getFingerprintIDez() {
-  uint8_t p = finger.getImage();
-  if (p != FINGERPRINT_OK)  return -1;
-
-  p = finger.image2Tz();
-  if (p != FINGERPRINT_OK)  return -1;
-
-  p = finger.fingerFastSearch();
-  if (p != FINGERPRINT_OK)  return -1;
-
-  // found a match!
-  Serial.print("Found ID #"); Serial.print(finger.fingerID);
-  Serial.print(" with confidence of "); Serial.println(finger.confidence);
-  return finger.fingerID;
-}
-
-
-
-//--------------------------------------------------------------------
-void loop() {
-      
-     Serial.println("Waiting for command...");
-     String command = readCommand();
-
-    if (command == "ENROLL" || command == "enroll" || command == "2") {
-        Serial.println("Starting enrollment...");
-        enrollfingerprint();
-       
-    } else if (command == "AUTH" || command == "A" || command == "a" || command == "1") {
-        Serial.println("Entering continuous authentication mode.");
-        bool rfidMatch = rfidAuthentication();
-      
-        while (true) {
-            Serial.println("Scan your card then scan you finger print ");
-            // delay(2000);
-            // Serial.println("Start with your Id: ");
-            // delay(1000);
-            bool rfidMatch = rfidAuthentication();
-            delay(1000);
-            Serial.println("Now: ");  // Check RFID first
-            int fingerprintID = getFingerprintID(); // Check fingerprint
-            delay(1000); 
-
-            if (rfidMatch && fingerprintID > 0) {
-                Serial.println("Both RFID and fingerprint matched!");
-                delay(1000);
-                digitalWrite(D8, HIGH);
-                delay(1000);
-                digitalWrite(D8, LOW);
-            } else {
-                Serial.println("Authentication failed.");
-                // digitalWrite(D8, HIGH);
-                // delay(2000);
-                // digitalWrite(D8, LOW);
-            }
-           
-            // Check for 'S' command to stop authentication mode
-            if (Serial.available() > 0) {
-                String stopCommand = readCommand();
-                if (stopCommand == "S" || stopCommand == "s" || stopCommand == "0") {
-                    Serial.println("Exiting authentication mode.");
-                    break;
-                }
-            }
-            delay(100); // Add a slight delay to prevent rapid looping
-        }
-    } else if (command == "DELETE" || command == "delete" || command == "4") {
-        Serial.println("Starting deletion...");
-        deleteIdfingerprint();
-        // keypad functionality for delete 
-        // rfid functionality for delete 
-    } else if (command == "EXIT"  || command == "0") {
-        Serial.println("Exiting...");
-        
-        while (1);
-    } else {
-        Serial.println("Invalid command, please try again.");
-    }
-
-    delay(1000); 
-}
-
-// Function definition
-String readCommand() {
-    String command = "";
-    while (command.length() == 0) {
-        if (Serial.available() > 0) {
-            command = Serial.readStringUntil('\n');
-            command.trim(); // Remove any whitespace or newline characters
-            Serial.flush(); // Flush the serial buffer to clear any additional data
-        }
-    }
-    return command;
-}
-
