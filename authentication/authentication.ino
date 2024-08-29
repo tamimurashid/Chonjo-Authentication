@@ -62,7 +62,8 @@ uint8_t rfidAuthentication() {
     } else {
       Serial.println("RFID tag did not match.");
       lcd.clear();
-      lcd.print("card/ tag  not match!");
+      scrollmessage("Warning !!"," card/ tag  not match!"); 
+     
       lcd.clear();
       return 1; // RFID tag mismatch
     }
@@ -95,7 +96,7 @@ void scrollmessage(String title, String message) {
     lcd.print(title);          // Print title in the first row
     lcd.setCursor(position, 1); // Set cursor to row 1 at current position
     lcd.print(message);        // Print message in the second row
-    delay(200);                // Adjust delay for scrolling speed
+    delay(100);                // Adjust delay for scrolling speed
   }
 }
 
