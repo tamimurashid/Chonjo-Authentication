@@ -102,13 +102,27 @@ void loop() {
       if (key) {
         if (key == '#') {
           break;  // Enter key pressed
+        } else if (key == 'D') {
+          if (enteredPassword.length() > 0) {
+            enteredPassword.remove(enteredPassword.length() - 1); // Remove the last character
+            lcd.setCursor(0, 1);
+            lcd.print("                "); // Clear the previous display line
+            lcd.setCursor(0, 1);
+            for (int i = 0; i < enteredPassword.length(); i++) {
+              lcd.print('*'); // Print * for each character in enteredPassword
+            }
+          }
+        } else {
+          enteredPassword += key;
+          lcd.setCursor(0, 1);
+          lcd.print("                "); // Clear the previous display line
+          lcd.setCursor(0, 1);
+          for (int i = 0; i < enteredPassword.length(); i++) {
+            lcd.print('*'); // Print * for each character entered
+          }
         }
-        enteredPassword += key;
-        lcd.setCursor(0, 1);
-        lcd.print(enteredPassword);
       }
     }
-
     Serial.print("Password entered: ");
     Serial.println(enteredPassword);
     lcd.clear();
@@ -122,7 +136,7 @@ void loop() {
     } else {
       Serial.println("Access denied!");
       lcd.print("Access denied!");
-      delay(1000);
+      delay(100);
       lcd.clear();
       lcd.print("Scan id again..");
     }
