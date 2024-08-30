@@ -72,7 +72,7 @@ uint8_t rfidAuthentication() {
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
     
-    if (tag == "6e5d273") { // Replace this with your expected RFID tag in HEX
+    if (tag == "27b25580") { // Replace this with your expected RFID tag in HEX
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
