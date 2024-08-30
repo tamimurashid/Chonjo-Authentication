@@ -4,8 +4,23 @@
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
 #include <SoftwareSerial.h>
+#include <Adafruit_Fingerprint.h>
+#include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(14, 15); // RX, TX
+#if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
+SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
+#else
+#define mySerial Serial1
+#endif
+
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
+uint8_t getFingerprintID();
+int getFingerprintIDez();
+String command = "";
+
+
+
+//SoftwareSerial mySerial(14, 15); // RX, TX
 
 // Pin definitions for Arduino Uno
 constexpr uint8_t RST_PIN = 0;  // RST pin for RFID
@@ -77,11 +92,33 @@ uint8_t rfidAuthentication() {
 }
 
 void setup() {
+  mySerial.begin(57600);
+  while (!Serial);
   Serial.begin(9600);
-  mySerial.begin(9600);
+  //mySerial.begin(9600);
+  finger.begin(57600);
+  delay(5);
+
+  if (finger.verifyPassword()) {
+    Serial.println("Found fingerprint sensor!");
+  } else {
+    Serial.println("Did not find fingerprint sensor :(");
+    while (1) { delay(1); }
+  }
   SPI.begin();
   rfid.PCD_Init();
-  pinMode(8, OUTPUT); // Pin for triggering relay or LED
+  pinMode(2, OUTPUT); // Pin for triggering relay or LED
+
+  finger.getTemplateCount();
+
+  if (finger.templateCount == 0) {
+    Serial.println("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
+  } else {
+    Serial.print("Sensor contains "); 
+    Serial.print(finger.templateCount); 
+    Serial.println(" templates");
+    Serial.println("Waiting for valid finger...");
+  }
   
   lcd.init();
   lcd.backlight();
@@ -102,67 +139,123 @@ void scrollmessage(String title, String message) {
   }
 }
 
-void loop() {
-  uint8_t rfidStatus = rfidAuthentication();
-  if (rfidStatus > 1) {  // RFID tag matched
-    lcd.clear();
-    lcd.print("card matched ..");
-    delay(1000);
-    lcd.clear();
-    lcd.print("Enter Password:");
-    Serial.println("Enter Password:");
-    enteredPassword = "";
-    char key;
-    while (true) {
-      key = keypad.getKey();
-      if (key) {
-        if (key == '#') {
-          break;  // Enter key pressed
-        } else if (key == 'D') {
-          if (enteredPassword.length() > 0) {
-            enteredPassword.remove(enteredPassword.length() - 1); // Remove the last character
-            lcd.setCursor(0, 1);
-            lcd.print("                "); // Clear the previous display line
-            lcd.setCursor(0, 1);
-            for (int i = 0; i < enteredPassword.length(); i++) {
-              lcd.print('*'); // Print * for each character in enteredPassword
-            }
-          }
-        } else {
-          enteredPassword += key;
-          lcd.setCursor(0, 1);
-          lcd.print("                "); // Clear the previous display line
-          lcd.setCursor(0, 1);
-          for (int i = 0; i < enteredPassword.length(); i++) {
-            lcd.print('*'); // Print * for each character entered
-          }
-        }
-      }
-    }
-    Serial.print("Password entered: ");
-    Serial.println(enteredPassword);
-    lcd.clear();
-    
-    if (enteredPassword == "123456789") {
-      Serial.println("Access granted!");
-      scrollmessage("Thank you ", "Access granted!"); 
-      mySerial.println("1");
-      digitalWrite(1, HIGH); // Trigger relay or unlock door
-      delay(5000); // Keep the door unlocked for 5 seconds
-      digitalWrite(1, LOW); // Lock the door again
-      lcd.clear();
-      scrollmessage("Hi there ", "please scan  Id ");
-
-    } else {
-      Serial.println("Access denied!");
-      scrollmessage("Error !! ", "Wrong password!!");
-      delay(100);
-      scrollmessage("Ooops !! ", "Access denied!!"); 
-      delay(100);
-      lcd.clear();
-      lcd.print("Scan id again..");
-    }
+uint8_t getFingerprintID() {
+  uint8_t p = finger.getImage();
+  if (p == FINGERPRINT_NOFINGER) {
+    Serial.println("No finger detected");
+    return p;
+  } else if (p != FINGERPRINT_OK) {
+    Serial.println("Image capture failed");
+    return p;
   }
-  
-  delay(1000); // Optional delay to prevent constant polling
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK) {
+    Serial.println("Image conversion failed");
+    return p;
+  }
+
+  p = finger.fingerSearch();
+  if (p == FINGERPRINT_OK) {
+    Serial.println("Found a fingerprint match!");
+  } else {
+    Serial.println("No fingerprint match found");
+  }
+
+  return finger.fingerID;
+}
+
+// Returns -1 if failed, otherwise returns ID #
+int getFingerprintIDez() {
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK) return -1;
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK) return -1;
+
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK) return -1;
+
+  Serial.print("Found ID #"); Serial.print(finger.fingerID);
+  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+  return finger.fingerID;
+}
+
+
+void loop() {
+    uint8_t rfidStatus = rfidAuthentication();
+    if (rfidStatus > 1) {  // RFID tag matched
+        lcd.clear();
+        lcd.print("card matched ..");
+        delay(1000);
+        lcd.clear();
+        lcd.print("Enter Password:");
+        Serial.println("Enter Password:");
+        enteredPassword = "";
+        char key;
+        while (true) {
+            key = keypad.getKey();
+            if (key) {
+                if (key == '#') {
+                    break;  // Enter key pressed
+                } else if (key == 'D') {
+                    if (enteredPassword.length() > 0) {
+                        enteredPassword.remove(enteredPassword.length() - 1); // Remove the last character
+                        lcd.setCursor(0, 1);
+                        lcd.print("                "); // Clear the previous display line
+                        lcd.setCursor(0, 1);
+                        for (int i = 0; i < enteredPassword.length(); i++) {
+                            lcd.print('*'); // Print * for each character in enteredPassword
+                        }
+                    }
+                } else {
+                    enteredPassword += key;
+                    lcd.setCursor(0, 1);
+                    lcd.print("                "); // Clear the previous display line
+                    lcd.setCursor(0, 1);
+                    for (int i = 0; i < enteredPassword.length(); i++) {
+                        lcd.print('*'); // Print * for each character entered
+                    }
+                }
+            }
+        }
+        
+        Serial.print("Password entered: ");
+        Serial.println(enteredPassword);
+        lcd.clear();
+        
+        if (enteredPassword == "123456789") {
+            Serial.println("Access granted! Proceeding with fingerprint authentication...");
+            scrollmessage("Password OK", "Place Finger...");
+            delay(1000);
+            
+            // Start fingerprint authentication
+            int fingerID = getFingerprintIDez();
+            delay(1000);
+            if (fingerID > -1) {
+                Serial.println("Fingerprint matched, access granted!");
+                scrollmessage("Fingerprint OK", "Access granted!");
+                digitalWrite(1, HIGH); // Trigger relay or unlock door
+                delay(5000); // Keep the door unlocked for 5 seconds
+                digitalWrite(1, LOW); // Lock the door again
+            } else {
+                Serial.println("Fingerprint did not match.");
+                scrollmessage("Fingerprint Fail", "Access denied!");
+            }
+            
+            lcd.clear();
+            scrollmessage("Hi there", "Please scan ID");
+            
+        } else {
+            Serial.println("Access denied!");
+            scrollmessage("Error !!", "Wrong password!!");
+            delay(100);
+            scrollmessage("Ooops !!", "Access denied!!");
+            delay(100);
+            lcd.clear();
+            lcd.print("Scan ID again...");
+        }
+    }
+    
+    delay(1000); // Optional delay to prevent constant polling
 }
