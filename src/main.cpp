@@ -237,6 +237,7 @@ void loop() {
                         lcd.print('*'); // Print * for each character entered
                     }
                 }
+                yield();  // Allow WDT to reset
             }
         }
         
@@ -246,7 +247,7 @@ void loop() {
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
             
-           int fingerID = -1;
+            int fingerID = -1;
             int attemptCount = 0;
             const int maxAttempts = 5;
 
@@ -264,18 +265,15 @@ void loop() {
                     if (attemptCount < maxAttempts) {
                         scrollmessage("Scan failed", "Try again");
                     } else {
-                        scrollmessage("Access denied", "Try again later");
+                        scrollmessage("Access denied", "Max attempts reached");
                     }
                 }
+                yield();  // Allow WDT to reset
             }
         } else {
-            scrollmessage("Password", "Incorrect");
+            scrollmessage("Wrong Password", "Access denied");
         }
-    } else if (rfidStatus == 1) {
-        scrollmessage("Warning!!", "Unknown card/tag..");
-    } else {
-        scrollmessage("Scan ID", "Again..");
     }
-
     delay(1000);
+    yield();  // Allow WDT to reset
 }
