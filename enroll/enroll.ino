@@ -4,9 +4,9 @@
 #include <Keypad.h>
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-
+// For UNO and others without hardware serial, we must use software serial...
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(14, 15);
+SoftwareSerial mySerial(14, 15); // RX, TX
 
 #else
 // On Leonardo/M0/etc, others with hardware serial, use hardware serial!
@@ -29,7 +29,6 @@ char keys[ROWS][COLS] = {
 };
 byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
-
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 uint8_t id;
@@ -56,6 +55,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.clear();
+  showMenu();
 }
 
 void loop() {
@@ -66,25 +66,49 @@ void loop() {
         lcd.clear();
         lcd.print("Enter ID and #");
         id = readNumber();
-        if (id == 0) { return; }
+        if (id == 0) {
+          lcd.clear();
+          lcd.print("Invalid ID");
+          delay(2000);
+          showMenu();
+          return;
+        }
         Serial.print("Enrolling ID #");
         Serial.println(id);
-        while (!getFingerprintEnroll());
+        if (getFingerprintEnroll()) {
+          lcd.clear();
+          lcd.print("Enrolled!");
+        } else {
+          lcd.clear();
+          lcd.print("Enroll Failed");
+        }
+        delay(2000);
+        showMenu();
         break;
         
       case '2': // Delete
         lcd.clear();
         lcd.print("Enter ID and #");
         id = readNumber();
-        if (id == 0) { return; }
+        if (id == 0) {
+          lcd.clear();
+          lcd.print("Invalid ID");
+          delay(2000);
+          showMenu();
+          return;
+        }
         Serial.print("Deleting ID #");
         Serial.println(id);
         p = finger.deleteModel(id); // Use existing p
         if (p == FINGERPRINT_OK) {
-          Serial.println("Deleted!");
+          lcd.clear();
+          lcd.print("Deleted!");
         } else {
-          Serial.println("Failed to delete");
+          lcd.clear();
+          lcd.print("Delete Failed");
         }
+        delay(2000);
+        showMenu();
         break;
         
       case '3': // Check Finger Present
@@ -93,30 +117,35 @@ void loop() {
         Serial.println("Checking for finger presence...");
         p = finger.getImage(); // Use existing p
         if (p == FINGERPRINT_OK) {
-          Serial.println("Finger detected!");
+          lcd.clear();
           lcd.print("Finger Present");
         } else {
-          Serial.println("No finger detected");
+          lcd.clear();
           lcd.print("No Finger");
         }
+        delay(2000);
+        showMenu();
         break;
         
       default:
         lcd.clear();
         lcd.print("Invalid option");
+        delay(2000);
+        showMenu();
         break;
     }
-    delay(2000); // Debounce delay
   }
 }
 
 uint8_t readNumber(void) {
   uint8_t num = 0;
+  lcd.clear();
+  lcd.print("Enter ID:");
   while (num == 0) {
-    while (!keypad.getKey());
     char key = keypad.getKey();
     if (key >= '0' && key <= '9') {
       num = num * 10 + (key - '0');
+      lcd.print(key);
     } else if (key == '#') {
       return num;
     }
@@ -124,12 +153,21 @@ uint8_t readNumber(void) {
   return num;
 }
 
+void showMenu() {
+  lcd.clear();
+  lcd.print("1: Enroll");
+  lcd.setCursor(0, 1);
+  lcd.print("2: Delete");
+  lcd.setCursor(0, 2);
+  lcd.print("3: Check");
+}
+
 uint8_t getFingerprintEnroll() {
-  int p = -1;
+  int result = -1;
   Serial.print("Waiting for valid finger to enroll as #"); Serial.println(id);
-  while (p != FINGERPRINT_OK) {
-    p = finger.getImage();
-    switch (p) {
+  while (result != FINGERPRINT_OK) {
+    result = finger.getImage();
+    switch (result) {
       case FINGERPRINT_OK:
         Serial.println("Image taken");
         break;
@@ -148,43 +186,44 @@ uint8_t getFingerprintEnroll() {
     }
   }
 
-  p = finger.image2Tz(1);
-  switch (p) {
+  result = finger.image2Tz(1);
+  switch (result) {
     case FINGERPRINT_OK:
       Serial.println("Image converted");
       break;
     case FINGERPRINT_IMAGEMESS:
       Serial.println("Image too messy");
-      return p;
+      return result;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
-      return p;
+      return result;
     case FINGERPRINT_FEATUREFAIL:
       Serial.println("Could not find fingerprint features");
-      return p;
+      return result;
     case FINGERPRINT_INVALIDIMAGE:
       Serial.println("Could not find fingerprint features");
-      return p;
+      return result;
     default:
       Serial.println("Unknown error");
-      return p;
+      return result;
   }
 
   Serial.println("Remove finger");
+  lcd.clear();
   lcd.print("Remove finger");
   delay(2000);
-  p = 0;
-  while (p != FINGERPRINT_NOFINGER) {
-    p = finger.getImage();
+  result = 0;
+  while (result != FINGERPRINT_NOFINGER) {
+    result = finger.getImage();
   }
   Serial.print("ID "); Serial.println(id);
-  p = -1;
+  result = -1;
   lcd.clear();
   Serial.println("Place same finger again");
-  lcd.print("Place same finger again");
-  while (p != FINGERPRINT_OK) {
-    p = finger.getImage();
-    switch (p) {
+  lcd.print("Place same finger");
+  while (result != FINGERPRINT_OK) {
+    result = finger.getImage();
+    switch (result) {
       case FINGERPRINT_OK:
         Serial.println("Image taken");
         break;
@@ -203,61 +242,61 @@ uint8_t getFingerprintEnroll() {
     }
   }
 
-  p = finger.image2Tz(2);
-  switch (p) {
+  result = finger.image2Tz(2);
+  switch (result) {
     case FINGERPRINT_OK:
       Serial.println("Image converted");
       break;
     case FINGERPRINT_IMAGEMESS:
       Serial.println("Image too messy");
-      return p;
+      return result;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
-      return p;
+      return result;
     case FINGERPRINT_FEATUREFAIL:
       Serial.println("Could not find fingerprint features");
-      return p;
+      return result;
     case FINGERPRINT_INVALIDIMAGE:
       Serial.println("Could not find fingerprint features");
-      return p;
+      return result;
     default:
       Serial.println("Unknown error");
-      return p;
+      return result;
   }
 
   Serial.print("Creating model for #"); Serial.println(id);
+  lcd.clear();
   lcd.print("Creating model");
-  p = finger.createModel();
-  if (p == FINGERPRINT_OK) {
+  result = finger.createModel();
+  if (result == FINGERPRINT_OK) {
     Serial.println("Prints matched!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+  } else if (result == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_ENROLLMISMATCH) {
+    return result;
+  } else if (result == FINGERPRINT_ENROLLMISMATCH) {
     Serial.println("Fingerprints did not match");
-    return p;
+    return result;
   } else {
     Serial.println("Unknown error");
-    return p;
+    return result;
   }
 
   Serial.print("ID "); Serial.println(id);
-  p = finger.storeModel(id);
-  if (p == FINGERPRINT_OK) {
+  result = finger.storeModel(id);
+  if (result == FINGERPRINT_OK) {
     Serial.println("Stored!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    return true;
+  } else if (result == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_BADLOCATION) {
+    return result;
+  } else if (result == FINGERPRINT_BADLOCATION) {
     Serial.println("Could not store in that location");
-    return p;
-  } else if (p == FINGERPRINT_FLASHERR) {
+    return result;
+  } else if (result == FINGERPRINT_FLASHERR) {
     Serial.println("Error writing to flash");
-    return p;
+    return result;
   } else {
     Serial.println("Unknown error");
-    return p;
+    return result;
   }
-
-  return true;
 }
