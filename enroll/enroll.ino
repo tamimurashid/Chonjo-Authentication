@@ -1,31 +1,11 @@
-/***************************************************
-  This is an example sketch for our optical Fingerprint sensor
-
-  Designed specifically to work with the Adafruit BMP085 Breakout
-  ----> http://www.adafruit.com/products/751
-
-  These displays use TTL Serial to communicate, 2 pins are required to
-  interface
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.  
-  Small bug-fix by Michael cochez
-
-  BSD license, all text above must be included in any redistribution
- ****************************************************/
-
 #include <Adafruit_Fingerprint.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-
+#include <Keypad.h>
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-// For UNO and others without hardware serial, we must use software serial...
-// pin #2 is IN from sensor (GREEN wire)
-// pin #3 is OUT from arduino  (WHITE wire)
-// Set up the serial port to use softwareserial..
+
+#include <SoftwareSerial.h>
 SoftwareSerial mySerial(14, 15);
 
 #else
@@ -35,19 +15,31 @@ SoftwareSerial mySerial(14, 15);
 
 #endif
 
-
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-uint8_t id;
-void scrollmessage(String title, String message);
+// Keypad setup
+const byte ROWS = 4; // Four rows
+const byte COLS = 4; // Four columns
+char keys[ROWS][COLS] = {
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
 
-void setup()
-{
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+uint8_t id;
+uint8_t p; // Declare p here to avoid redeclaration issues
+
+void setup() {
   Serial.begin(9600);
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
   delay(100);
-  Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
+  Serial.println("\n\nAdafruit Fingerprint sensor setup");
 
   // set the data rate for the sensor serial port
   finger.begin(57600);
@@ -61,81 +53,100 @@ void setup()
 
   Serial.println(F("Reading sensor parameters"));
   finger.getParameters();
-  Serial.print(F("Status: 0x")); Serial.println(finger.status_reg, HEX);
-  Serial.print(F("Sys ID: 0x")); Serial.println(finger.system_id, HEX);
-  Serial.print(F("Capacity: ")); Serial.println(finger.capacity);
-  Serial.print(F("Security level: ")); Serial.println(finger.security_level);
-  Serial.print(F("Device address: ")); Serial.println(finger.device_addr, HEX);
-  Serial.print(F("Packet len: ")); Serial.println(finger.packet_len);
-  Serial.print(F("Baud rate: ")); Serial.println(finger.baud_rate);
   lcd.init();
   lcd.backlight();
   lcd.clear();
 }
 
-uint8_t readnumber(void) {
-  uint8_t num = 0;
+void loop() {
+  char key = keypad.getKey();
+  if (key) {
+    switch (key) {
+      case '1': // Enroll
+        lcd.clear();
+        lcd.print("Enter ID and #");
+        id = readNumber();
+        if (id == 0) { return; }
+        Serial.print("Enrolling ID #");
+        Serial.println(id);
+        while (!getFingerprintEnroll());
+        break;
+        
+      case '2': // Delete
+        lcd.clear();
+        lcd.print("Enter ID and #");
+        id = readNumber();
+        if (id == 0) { return; }
+        Serial.print("Deleting ID #");
+        Serial.println(id);
+        p = finger.deleteModel(id); // Use existing p
+        if (p == FINGERPRINT_OK) {
+          Serial.println("Deleted!");
+        } else {
+          Serial.println("Failed to delete");
+        }
+        break;
+        
+      case '3': // Check Finger Present
+        lcd.clear();
+        lcd.print("Checking Finger");
+        Serial.println("Checking for finger presence...");
+        p = finger.getImage(); // Use existing p
+        if (p == FINGERPRINT_OK) {
+          Serial.println("Finger detected!");
+          lcd.print("Finger Present");
+        } else {
+          Serial.println("No finger detected");
+          lcd.print("No Finger");
+        }
+        break;
+        
+      default:
+        lcd.clear();
+        lcd.print("Invalid option");
+        break;
+    }
+    delay(2000); // Debounce delay
+  }
+}
 
+uint8_t readNumber(void) {
+  uint8_t num = 0;
   while (num == 0) {
-    while (! Serial.available());
-    num = Serial.parseInt();
+    while (!keypad.getKey());
+    char key = keypad.getKey();
+    if (key >= '0' && key <= '9') {
+      num = num * 10 + (key - '0');
+    } else if (key == '#') {
+      return num;
+    }
   }
   return num;
 }
 
-void scrollmessage(String title, String message) {
-  for (int position = 16; position >= 0; position--) {
-    lcd.clear();               // Clear the LCD
-    lcd.setCursor(0, 0);       // Set cursor to row 0, column 0
-    lcd.print(title);          // Print title in the first row
-    lcd.setCursor(position, 1); // Set cursor to row 1 at current position
-    lcd.print(message);        // Print message in the second row
-    delay(100);                // Adjust delay for scrolling speed
-  }
-}
-
-void loop()                     // run over and over again
-{
-  Serial.println("Ready to enroll a fingerprint!");
-  scrollmessage("Registration", "Ready to enroll a fingerprint!");
-  Serial.println("Please type in the ID # (from 1 to 127) you want to save this finger as...");
-  scrollmessage("Registration", "Enter your id ");
-  id = readnumber();
-  if (id == 0) {// ID #0 not allowed, try again!
-     return;
-  }
-  Serial.print("Enrolling ID #");
-  Serial.println(id);
-
-  while (! getFingerprintEnroll() );
-}
-
 uint8_t getFingerprintEnroll() {
-
   int p = -1;
   Serial.print("Waiting for valid finger to enroll as #"); Serial.println(id);
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
-    case FINGERPRINT_OK:
-      Serial.println("Image taken");
-      break;
-    case FINGERPRINT_NOFINGER:
-      Serial.print(".");
-      break;
-    case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println("Communication error");
-      break;
-    case FINGERPRINT_IMAGEFAIL:
-      Serial.println("Imaging error");
-      break;
-    default:
-      Serial.println("Unknown error");
-      break;
+      case FINGERPRINT_OK:
+        Serial.println("Image taken");
+        break;
+      case FINGERPRINT_NOFINGER:
+        Serial.print(".");
+        break;
+      case FINGERPRINT_PACKETRECIEVEERR:
+        Serial.println("Communication error");
+        break;
+      case FINGERPRINT_IMAGEFAIL:
+        Serial.println("Imaging error");
+        break;
+      default:
+        Serial.println("Unknown error");
+        break;
     }
   }
-
-  // OK success!
 
   p = finger.image2Tz(1);
   switch (p) {
@@ -158,7 +169,7 @@ uint8_t getFingerprintEnroll() {
       Serial.println("Unknown error");
       return p;
   }
-  
+
   Serial.println("Remove finger");
   lcd.print("Remove finger");
   delay(2000);
@@ -174,25 +185,23 @@ uint8_t getFingerprintEnroll() {
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
-    case FINGERPRINT_OK:
-      Serial.println("Image taken");
-      break;
-    case FINGERPRINT_NOFINGER:
-      Serial.print(".");
-      break;
-    case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println("Communication error");
-      break;
-    case FINGERPRINT_IMAGEFAIL:
-      Serial.println("Imaging error");
-      break;
-    default:
-      Serial.println("Unknown error");
-      break;
+      case FINGERPRINT_OK:
+        Serial.println("Image taken");
+        break;
+      case FINGERPRINT_NOFINGER:
+        Serial.print(".");
+        break;
+      case FINGERPRINT_PACKETRECIEVEERR:
+        Serial.println("Communication error");
+        break;
+      case FINGERPRINT_IMAGEFAIL:
+        Serial.println("Imaging error");
+        break;
+      default:
+        Serial.println("Unknown error");
+        break;
     }
   }
-
-  // OK success!
 
   p = finger.image2Tz(2);
   switch (p) {
@@ -216,10 +225,8 @@ uint8_t getFingerprintEnroll() {
       return p;
   }
 
-  // OK converted!
-  Serial.print("Creating model for #");  Serial.println(id);
-  scrollmessage("Hi there ", "Creating model for # " + id); 
-
+  Serial.print("Creating model for #"); Serial.println(id);
+  lcd.print("Creating model");
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
     Serial.println("Prints matched!");
