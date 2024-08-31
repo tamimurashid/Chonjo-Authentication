@@ -5,10 +5,11 @@
 #include <Keypad.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_Fingerprint.h>
-#include <SoftwareSerial.h>
+
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
 SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
+SoftwareSerial mySerial1(3, 4);
 #else
 #define mySerial Serial1
 #endif
@@ -35,19 +36,19 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Keypad setup
-const byte ROWS = 4;  // four rows
-const byte COLS = 4;  // four columns
-char keys[ROWS][COLS] = {
-  {'1','2','3','A'},
-  {'4','5','6','B'},
-  {'7','8','9','C'},
-  {'*','0','#','D'}
-};
+// const byte ROWS = 4;  // four rows
+// const byte COLS = 4;  // four columns
+// char keys[ROWS][COLS] = {
+//   {'1','2','3','A'},
+//   {'4','5','6','B'},
+//   {'7','8','9','C'},
+//   {'*','0','#','D'}
+// };
 
-byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
+// byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
+// byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
 
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+// Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 uint8_t id;
 String tag;
@@ -273,6 +274,7 @@ void enrollfingerprint(){
 *///--------------------------------------------
 void setup() {
   mySerial.begin(57600);
+  mySerial1.begin(9600);
   while (!Serial);
   Serial.begin(9600);
   //mySerial.begin(9600);
@@ -363,6 +365,11 @@ int getFingerprintIDez() {
 
 
 void loop() {
+  //  char key1 = keypad.getKey();
+  //     if(key1 == "12ABCD#"){
+  //       enrollfingerprint();
+
+  //     }
   
     uint8_t rfidStatus = rfidAuthentication();
     if (rfidStatus > 1) {  // RFID tag matched
@@ -374,7 +381,8 @@ void loop() {
         Serial.println("Enter Password:");
         enteredPassword = "";
         char key;
-        while (true) {
+        if(myserial1.available()){
+          while (true) {
             key = keypad.getKey();
             if (key) {
                 if (key == '#') {
@@ -399,6 +407,9 @@ void loop() {
                     }
                 }
             }
+    
+        }
+        
         }
         
         Serial.print("Password entered: ");
