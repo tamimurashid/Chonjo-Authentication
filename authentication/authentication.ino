@@ -55,7 +55,9 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-
+//--------------------------------------------------------------------------------
+         /* Keypad setup pins declaration  */
+//--------------------------------------------------------------------------------
 byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
 
@@ -64,7 +66,9 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 uint8_t id;
 String tag;
 String enteredPassword = "";
-
+//--------------------------------------------------------------------------------
+         /* Authentication function for rfid reader to scan and read id  */
+//--------------------------------------------------------------------------------
 uint8_t rfidAuthentication() {
   if (!rfid.PICC_IsNewCardPresent()) {
     return 0; // No new card present
@@ -105,7 +109,11 @@ uint8_t rfidAuthentication() {
   lcd.print("Failed to read");
   return 0; // Failed to read card
 }
-
+//--------------------------------------------------------------------------------
+         /* Void setup function for all program setup and initialization of 
+         importance library that are required in the system  exapmle initialization 
+         of seria communication and lcd display 16*2.    */
+//--------------------------------------------------------------------------------
 void setup() {
   mySerial.begin(57600);
   while (!Serial);
@@ -142,7 +150,9 @@ void setup() {
   delay(100);
   lcd.print("Ready ");
 }
-
+//--------------------------------------------------------------------------------
+         /* lcd function which enable provide message in scroll format  */
+//--------------------------------------------------------------------------------
 void scrollmessage(String title, String message) {
   for (int position = 16; position >= 0; position--) {
     lcd.clear();               // Clear the LCD
@@ -153,7 +163,10 @@ void scrollmessage(String title, String message) {
     delay(100);                // Adjust delay for scrolling speed
   }
 }
-
+//--------------------------------------------------------------------------------
+         /* A finger print function to read fingers when detected and return value
+          for  further validation.        */
+//--------------------------------------------------------------------------------
 uint8_t getFingerprintID() {
   uint8_t p = finger.getImage();
   if (p == FINGERPRINT_NOFINGER) {
