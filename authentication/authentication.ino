@@ -12,6 +12,8 @@ SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
 #else
 #define mySerial Serial1
 #endif
+#define relay 17
+
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 uint8_t getFingerprintID();
@@ -72,7 +74,7 @@ uint8_t rfidAuthentication() {
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
     
-    if (tag == "27b25580") { // Replace this with your expected RFID tag in HEX
+    if (tag == "27b25580" || tag == "6e5d273") { // Replace this with your expected RFID tag in HEX
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
@@ -99,12 +101,12 @@ void setup() {
   finger.begin(57600);
   delay(5);
 
-  if (finger.verifyPassword()) {
-    Serial.println("Found fingerprint sensor!");
-  } else {
-    Serial.println("Did not find fingerprint sensor :(");
-    while (1) { delay(1); }
-  }
+  // if (finger.verifyPassword()) {
+  //   Serial.println("Found fingerprint sensor!");
+  // } else {
+  //   Serial.println("Did not find fingerprint sensor :(");
+  //   while (1) { delay(1); }
+  // }
   SPI.begin();
   rfid.PCD_Init();
   pinMode(2, OUTPUT); // Pin for triggering relay or LED
@@ -119,7 +121,7 @@ void setup() {
     Serial.println(" templates");
     Serial.println("Waiting for valid finger...");
   }
-  
+  pinMode(relay, OUTPUT);
   lcd.init();
   lcd.backlight();
   lcd.clear();
@@ -224,7 +226,7 @@ void loop() {
         Serial.println(enteredPassword);
         lcd.clear();
         
-        if (enteredPassword == "123456789") {
+        if (enteredPassword == "13A46B79C") {
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
@@ -241,9 +243,9 @@ void loop() {
                 if (fingerID > -1) {
                     Serial.println("Fingerprint matched, access granted!");
                     scrollmessage("Fingerprint OK", "Access granted!");
-                    digitalWrite(1, HIGH); // Trigger relay or unlock door
+                    digitalWrite(relay, HIGH); // Trigger relay or unlock door
                     delay(5000); // Keep the door unlocked for 5 seconds
-                    digitalWrite(1, LOW); // Lock the door again
+                    digitalWrite(relay, LOW); // Lock the door again
                 } else {
                     if (attemptCount < maxAttempts) {
                         Serial.println("Waiting for valid fingerprint...");

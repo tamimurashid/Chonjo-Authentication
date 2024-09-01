@@ -73,6 +73,8 @@ void loop() {
           showMenu();
           return;
         }
+        lcd.clear();
+        lcd.print("place a finger ..");
         Serial.print("Enrolling ID #");
         Serial.println(id);
         if (getFingerprintEnroll()) {
@@ -86,7 +88,7 @@ void loop() {
         showMenu();
         break;
         
-      case '2': // Delete
+      case '3': // Delete
         lcd.clear();
         lcd.print("Enter ID and #");
         id = readNumber();
@@ -111,7 +113,7 @@ void loop() {
         showMenu();
         break;
         
-      case '3': // Check Finger Present
+      case '4': // Check Finger Present
         lcd.clear();
         lcd.print("Checking Finger");
         Serial.println("Checking for finger presence...");
@@ -157,9 +159,10 @@ void showMenu() {
   lcd.clear();
   lcd.print("1: Enroll");
   lcd.setCursor(0, 1);
-  lcd.print("2: Delete");
+  lcd.print("3: Delete");
   lcd.setCursor(0, 2);
-  lcd.print("3: Check");
+  lcd.print("4: Check");
+  lcd.setCursor(0, 2);
 }
 
 uint8_t getFingerprintEnroll() {
