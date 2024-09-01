@@ -14,6 +14,9 @@
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
 
+//--------------------------------------------------------------------------------
+         /* Pin definition   */
+//---------------------------------------------------------------------------------
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
 SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
 #else
@@ -21,7 +24,9 @@ SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
 #endif
 #define relay 17
 #define buzzle 16
-
+//--------------------------------------------------------------------------------
+         /*  object creation area  and decralation of global variables */
+//---------------------------------------------------------------------------------
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 uint8_t getFingerprintID();
 int getFingerprintIDez();
@@ -29,9 +34,9 @@ String command = "";
 
 
 
-
-
-// Pin definitions for Arduino Uno
+//--------------------------------------------------------------------------------
+         /* Pin definitions for Arduino Uno */
+//---------------------------------------------------------------------------------
 constexpr uint8_t RST_PIN = 0;  // RST pin for RFID
 constexpr uint8_t SS_PIN = 10;  // SDA (SS) pin for RFID
 
@@ -39,8 +44,9 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 
 // LCD I2C address
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-
-// Keypad setup
+//--------------------------------------------------------------------------------
+         /* Keypad setup */
+//--------------------------------------------------------------------------------
 const byte ROWS = 4;  // four rows
 const byte COLS = 4;  // four columns
 char keys[ROWS][COLS] = {
