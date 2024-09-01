@@ -2,7 +2,9 @@
  Chonjo multifactor authenticate system 
  This file is for authentication mode 
 */
-//----------------------------------------------
+//--------------------------------------------------------------------------------
+         /* Header declaration for importing different library used */
+//---------------------------------------------------------------------------------
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Wire.h>
