@@ -1,3 +1,8 @@
+/**
+ Chonjo multifactor authenticate system 
+ This file is for authentication mode 
+*/
+//----------------------------------------------
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Wire.h>
@@ -13,7 +18,7 @@ SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
 #define mySerial Serial1
 #endif
 #define relay 17
-
+#define buzzle 16
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 uint8_t getFingerprintID();
@@ -22,7 +27,7 @@ String command = "";
 
 
 
-//SoftwareSerial mySerial(14, 15); // RX, TX
+
 
 // Pin definitions for Arduino Uno
 constexpr uint8_t RST_PIN = 0;  // RST pin for RFID
