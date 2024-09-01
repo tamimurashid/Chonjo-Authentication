@@ -258,7 +258,10 @@ void loop() {
         Serial.print("Password entered: ");
         Serial.println(enteredPassword);
         lcd.clear();
-        
+        //--------------------------------------------------------------------------------
+                      /* here is when after correct id then it compare with 
+                      the password  */
+      //--------------------------------------------------------------------------------
         if (enteredPassword == "13A46B79C") {
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
