@@ -192,7 +192,10 @@ uint8_t getFingerprintID() {
 
   return finger.fingerID;
 }
-
+//--------------------------------------------------------------------------------
+         /* This is finger print function which returns value when finger is
+          detected  */
+//--------------------------------------------------------------------------------
 // Returns -1 if failed, otherwise returns ID #
 int getFingerprintIDez() {
   uint8_t p = finger.getImage();
@@ -209,9 +212,13 @@ int getFingerprintIDez() {
   return finger.fingerID;
 }
 
-
+//--------------------------------------------------------------------------------
+         /* A void loop function is like the main function where all code that need 
+         to run simultaneously or reapeted to be repeated   */
+//--------------------------------------------------------------------------------
 void loop() {
-    uint8_t rfidStatus = rfidAuthentication();
+  
+    uint8_t rfidStatus = rfidAuthentication();// rfid check for authenticatiom
     if (rfidStatus > 1) {  // RFID tag matched
         lcd.clear();
         lcd.print("card matched ..");
@@ -221,7 +228,7 @@ void loop() {
         Serial.println("Enter Password:");
         enteredPassword = "";
         char key;
-        while (true) {
+        while (true) {// while loop to wait user password 
             key = keypad.getKey();
             if (key) {
                 if (key == '#') {
