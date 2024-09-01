@@ -66,6 +66,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 uint8_t id;
 String tag;
 String enteredPassword = "";
+
 //--------------------------------------------------------------------------------
          /* Authentication function for rfid reader to scan and read id  */
 //--------------------------------------------------------------------------------
@@ -121,13 +122,6 @@ void setup() {
   //mySerial.begin(9600);
   finger.begin(57600);
   delay(5);
-
-  // if (finger.verifyPassword()) {
-  //   Serial.println("Found fingerprint sensor!");
-  // } else {
-  //   Serial.println("Did not find fingerprint sensor :(");
-  //   while (1) { delay(1); }
-  // }
   SPI.begin();
   rfid.PCD_Init();
   pinMode(2, OUTPUT); // Pin for triggering relay or LED
