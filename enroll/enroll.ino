@@ -7,6 +7,7 @@
 // For UNO and others without hardware serial, we must use software serial...
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(14, 15); // RX, TX
+#define buzzle 16
 
 #else
 // On Leonardo/M0/etc, others with hardware serial, use hardware serial!
