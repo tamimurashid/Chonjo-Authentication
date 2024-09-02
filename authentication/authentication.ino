@@ -249,6 +249,7 @@ void loop() {
         while (true) {// while loop to wait user password 
             key = keypad.getKey();
             if (key) {
+              keyPressTone();// added
                 if (key == '#') {
                     break;  // Enter key pressed
                 } else if (key == 'D') {
