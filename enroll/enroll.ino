@@ -4,16 +4,11 @@
 #include <Keypad.h>
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-// For UNO and others without hardware serial, we must use software serial...
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(14, 15); // RX, TX
 #define buzzle 16
-
 #else
-// On Leonardo/M0/etc, others with hardware serial, use hardware serial!
-// #0 is green wire, #1 is white
 #define mySerial Serial1
-
 #endif
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
@@ -28,12 +23,38 @@ char keys[ROWS][COLS] = {
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
 };
-byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
+byte rowPins[ROWS] = {5, 4, 3, 2}; // connect to the row pinouts of the keypad
+byte colPins[COLS] = {9, 8, 7, 6}; // connect to the column pinouts of the keypad
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 uint8_t id;
 uint8_t p; // Declare p here to avoid redeclaration issues
+
+//--------------------------------------------------------------------------------
+         /* sound functions  */
+//--------------------------------------------------------------------------------
+void keyPressTone() {
+  tone(buzzle, 1000, 100); // Play a 1kHz tone for 100ms
+  delay(100); // Wait for the tone to finish
+  noTone(buzzle);
+}
+
+// Function to play a warning sound
+void warningSound() {
+  tone(buzzle, 500, 500); // Play a 500Hz tone for 500ms
+  delay(500);
+  noTone(buzzle);
+}
+
+// Function to play a success sound
+void successSound() {
+  tone(buzzle, 1500, 300); // Play a 1.5kHz tone for 300ms
+  delay(300);
+  noTone(buzzle);
+  tone(buzzle, 2000, 300); // Play a 2kHz tone for 300ms
+  delay(300);
+  noTone(buzzle);
+}
 
 void setup() {
   Serial.begin(9600);
@@ -41,15 +62,7 @@ void setup() {
   delay(100);
   Serial.println("\n\nAdafruit Fingerprint sensor setup");
 
-  // set the data rate for the sensor serial port
-   finger.begin(57600);
-
-  // if (finger.verifyPassword()) {
-  //   Serial.println("Found fingerprint sensor!");
-  // } else {
-  //   Serial.println("Did not find fingerprint sensor :(");
-  //   while (1) { delay(1); }
-  // }
+  finger.begin(57600);
 
   Serial.println(F("Reading sensor parameters"));
   finger.getParameters();
@@ -75,7 +88,10 @@ void loop() {
           return;
         }
         lcd.clear();
-        lcd.print("place a finger ..");
+        lcd.print("Press # to Confirm");
+        while (keypad.getKey() != '#'); // Wait for the user to press #
+        lcd.clear();
+        lcd.print("Place a finger..");
         Serial.print("Enrolling ID #");
         Serial.println(id);
         if (getFingerprintEnroll()) {
@@ -88,7 +104,7 @@ void loop() {
         delay(2000);
         showMenu();
         break;
-        
+
       case '3': // Delete
         lcd.clear();
         lcd.print("Enter ID and #");
@@ -113,23 +129,15 @@ void loop() {
         delay(2000);
         showMenu();
         break;
-        
-      case '4': // Check Finger Present
+
+      case '4': // Show all stored fingerprints
         lcd.clear();
-        lcd.print("Checking Finger");
-        Serial.println("Checking for finger presence...");
-        p = finger.getImage(); // Use existing p
-        if (p == FINGERPRINT_OK) {
-          lcd.clear();
-          lcd.print("Finger Present");
-        } else {
-          lcd.clear();
-          lcd.print("No Finger");
-        }
-        delay(2000);
+        lcd.print("Listing IDs...");
+        listFingerprints();
+        delay(5000); // Show the list for a few seconds
         showMenu();
         break;
-        
+
       default:
         lcd.clear();
         lcd.print("Invalid option");
@@ -144,7 +152,7 @@ uint8_t readNumber(void) {
   uint8_t num = 0;
   lcd.clear();
   lcd.print("Enter ID:");
-  while (num == 0) {
+  while (true) {
     char key = keypad.getKey();
     if (key >= '0' && key <= '9') {
       num = num * 10 + (key - '0');
@@ -153,7 +161,6 @@ uint8_t readNumber(void) {
       return num;
     }
   }
-  return num;
 }
 
 void showMenu() {
@@ -161,9 +168,8 @@ void showMenu() {
   lcd.print("1: Enroll");
   lcd.setCursor(0, 1);
   lcd.print("3: Delete");
-  lcd.setCursor(0, 2);
-  lcd.print("4: Check");
-  lcd.setCursor(0, 2);
+  lcd.setCursor(8, 1);
+  lcd.print("4: List IDs");
 }
 
 uint8_t getFingerprintEnroll() {
@@ -303,4 +309,20 @@ uint8_t getFingerprintEnroll() {
     Serial.println("Unknown error");
     return result;
   }
+}
+
+void listFingerprints() {
+  Serial.println("Stored IDs:");
+  lcd.clear();
+  lcd.print("Stored IDs:");
+  for (int i = 1; i < 127; i++) {
+    uint8_t p = finger.loadModel(i);
+    if (p == FINGERPRINT_OK) {
+      Serial.print("ID "); Serial.println(i);
+      lcd.setCursor(0, 1);
+      lcd.print(i);
+      delay(1000); // Pause for a second to read
+    }
+  }
+  Serial.println("Done listing fingerprints");
 }
