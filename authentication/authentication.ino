@@ -124,6 +124,7 @@ uint8_t rfidAuthentication() {
       return 2; // RFID tag matched
     } else {
       Serial.println("RFID tag did not match.");
+      void warningSound();
       lcd.clear();
       scrollmessage("Warning !!","Unknown card/tag .."); 
       return 1; // RFID tag mismatch
@@ -133,6 +134,7 @@ uint8_t rfidAuthentication() {
   Serial.println("Failed to read card.");
   lcd.clear();
   lcd.print("Failed to read");
+  void warningSound();
   return 0; // Failed to read card
 }
 //--------------------------------------------------------------------------------
@@ -318,8 +320,10 @@ void loop() {
 
             if (fingerID == -1) {
                 // Handle case where no valid fingerprint was detected after maximum attempts
+                warningSound();
                 Serial.println("Max attempts reached. No valid fingerprint detected.");
                 scrollmessage("Timeout!", "Access denied!");
+                
             }
 
             lcd.clear();
@@ -327,6 +331,7 @@ void loop() {
             
         } else {
             Serial.println("Access denied!");
+            warningSound();
             scrollmessage("Error !!", "Wrong password!!");
             delay(100);
             scrollmessage("Ooops !!", "Access denied!!");
