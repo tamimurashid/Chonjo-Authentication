@@ -120,6 +120,7 @@ uint8_t rfidAuthentication() {
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
+      successSound();
       return 2; // RFID tag matched
     } else {
       Serial.println("RFID tag did not match.");
@@ -240,6 +241,7 @@ void loop() {
     if (rfidStatus > 1) {  // RFID tag matched
         lcd.clear();
         lcd.print("card matched ..");
+        successSound();
         delay(1000);
         lcd.clear();
         lcd.print("Enter Password:");
@@ -285,6 +287,7 @@ void loop() {
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
+            successSound();
             
            int fingerID = -1;
             int attemptCount = 0;
@@ -298,6 +301,7 @@ void loop() {
                 if (fingerID > -1) {
                     Serial.println("Fingerprint matched, access granted!");
                     scrollmessage("Fingerprint OK", "Access granted!");
+                    successSound();
                     digitalWrite(relay, HIGH); // Trigger relay or unlock door
                     delay(5000); // Keep the door unlocked for 5 seconds
                     digitalWrite(relay, LOW); // Lock the door again
