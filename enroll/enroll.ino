@@ -41,14 +41,14 @@ void setup() {
   Serial.println("\n\nAdafruit Fingerprint sensor setup");
 
   // set the data rate for the sensor serial port
-  finger.begin(57600);
+   finger.begin(57600);
 
-  if (finger.verifyPassword()) {
-    Serial.println("Found fingerprint sensor!");
-  } else {
-    Serial.println("Did not find fingerprint sensor :(");
-    while (1) { delay(1); }
-  }
+  // if (finger.verifyPassword()) {
+  //   Serial.println("Found fingerprint sensor!");
+  // } else {
+  //   Serial.println("Did not find fingerprint sensor :(");
+  //   while (1) { delay(1); }
+  // }
 
   Serial.println(F("Reading sensor parameters"));
   finger.getParameters();
