@@ -66,7 +66,31 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 uint8_t id;
 String tag;
 String enteredPassword = "";
+//--------------------------------------------------------------------------------
+         /* sound functions  */
+//--------------------------------------------------------------------------------
+void keyPressTone() {
+  tone(buzzle, 1000, 100); // Play a 1kHz tone for 100ms
+  delay(100); // Wait for the tone to finish
+  noTone(buzzle);
+}
 
+// Function to play a warning sound
+void warningSound() {
+  tone(buzzle, 500, 500); // Play a 500Hz tone for 500ms
+  delay(500);
+  noTone(buzzle);
+}
+
+// Function to play a success sound
+void successSound() {
+  tone(buzzle, 1500, 300); // Play a 1.5kHz tone for 300ms
+  delay(300);
+  noTone(buzzle);
+  tone(buzzle, 2000, 300); // Play a 2kHz tone for 300ms
+  delay(300);
+  noTone(buzzle);
+}
 //--------------------------------------------------------------------------------
          /* Authentication function for rfid reader to scan and read id  */
 //--------------------------------------------------------------------------------
@@ -96,9 +120,11 @@ uint8_t rfidAuthentication() {
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
+      successSound();
       return 2; // RFID tag matched
     } else {
       Serial.println("RFID tag did not match.");
+      void warningSound();
       lcd.clear();
       scrollmessage("Warning !!","Unknown card/tag .."); 
       return 1; // RFID tag mismatch
@@ -108,6 +134,7 @@ uint8_t rfidAuthentication() {
   Serial.println("Failed to read card.");
   lcd.clear();
   lcd.print("Failed to read");
+  void warningSound();
   return 0; // Failed to read card
 }
 //--------------------------------------------------------------------------------
@@ -216,6 +243,7 @@ void loop() {
     if (rfidStatus > 1) {  // RFID tag matched
         lcd.clear();
         lcd.print("card matched ..");
+        successSound();
         delay(1000);
         lcd.clear();
         lcd.print("Enter Password:");
@@ -225,6 +253,7 @@ void loop() {
         while (true) {// while loop to wait user password 
             key = keypad.getKey();
             if (key) {
+              keyPressTone();// added
                 if (key == '#') {
                     break;  // Enter key pressed
                 } else if (key == 'D') {
@@ -260,6 +289,7 @@ void loop() {
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
+            successSound();
             
            int fingerID = -1;
             int attemptCount = 0;
@@ -273,6 +303,7 @@ void loop() {
                 if (fingerID > -1) {
                     Serial.println("Fingerprint matched, access granted!");
                     scrollmessage("Fingerprint OK", "Access granted!");
+                    successSound();
                     digitalWrite(relay, HIGH); // Trigger relay or unlock door
                     delay(5000); // Keep the door unlocked for 5 seconds
                     digitalWrite(relay, LOW); // Lock the door again
@@ -289,8 +320,10 @@ void loop() {
 
             if (fingerID == -1) {
                 // Handle case where no valid fingerprint was detected after maximum attempts
+                warningSound();
                 Serial.println("Max attempts reached. No valid fingerprint detected.");
                 scrollmessage("Timeout!", "Access denied!");
+                
             }
 
             lcd.clear();
@@ -298,6 +331,7 @@ void loop() {
             
         } else {
             Serial.println("Access denied!");
+            warningSound();
             scrollmessage("Error !!", "Wrong password!!");
             delay(100);
             scrollmessage("Ooops !!", "Access denied!!");
