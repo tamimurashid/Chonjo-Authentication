@@ -63,6 +63,22 @@ void setup() {
   Serial.println("\n\nAdafruit Fingerprint sensor setup");
 
   finger.begin(57600);
+  finger.getTemplateCount();
+
+  if (finger.templateCount == 0) {
+    Serial.println("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
+  } else {
+    lcd.setCursor(0, 0);
+    lcd.print("enroll mode ");
+    lcd.setCursor(0, 1);
+    lcd.print("Sensor contains " + finger.templateCount);
+    delay(100);
+
+    Serial.print("Sensor contains "); 
+    Serial.print(finger.templateCount); 
+    Serial.println(" templates");
+    Serial.println("Waiting for valid finger...");
+  }
 
   Serial.println(F("Reading sensor parameters"));
   finger.getParameters();

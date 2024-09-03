@@ -2,6 +2,21 @@
  Chonjo multifactor authenticate system 
  This file is for authentication mode 
 */
+
+//--------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------
+
+//---------------------------/*System configaration panel */----------------------
+
+//----/* User identification config*/------------
+   String id_1 = "27b25580";
+   String id_2 = "6e5d273";
+   String Register_password_1 = "13A46B79C";
+//-----------------------------------------------   
+
+//----------// ports configuration//--------------
+//------Keypad-ports--config---------------
+
 //--------------------------------------------------------------------------------
          /* Header declaration for importing different library used */
 //---------------------------------------------------------------------------------
@@ -116,11 +131,11 @@ uint8_t rfidAuthentication() {
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
     
-    if (tag == "27b25580" || tag == "6e5d273") { // Replace this with your expected RFID tag in HEX
+    if (tag ==  id_1 || tag ==  id_2 ) { // Replace this with your expected RFID tag in HEX
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
-      successSound();
+      //successSound();
       return 2; // RFID tag matched
     } else {
       Serial.println("RFID tag did not match.");
@@ -285,7 +300,7 @@ void loop() {
                       /* here is when after correct id then it compare with 
                       the password  */
       //--------------------------------------------------------------------------------
-        if (enteredPassword == "13A46B79C") {
+        if (enteredPassword == Register_password_1) {
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
