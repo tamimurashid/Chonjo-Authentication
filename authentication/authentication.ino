@@ -21,7 +21,7 @@
 SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
 #else
 #define mySerial Serial1
-#endif
+#endifgit 
 #define relay 17
 #define buzzle 16
 //--------------------------------------------------------------------------------
