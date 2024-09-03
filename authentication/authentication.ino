@@ -16,7 +16,17 @@
 
 //----------// ports configuration//--------------
 //------Keypad-ports--config---------------
-
+/*Description:
+This are pins for connection of 4x4 keypad to the arduino board regardles this version work on arduni board only but can be modifying for other baord when necessary*/
+ uint8_t row1 = 2;
+ uint8_t row2 = 3;
+ uint8_t row3 = 4;
+ uint8_t row4 = 5;
+ uint8_t col1 = 6;
+ uint8_t col2 = 7;
+ uint8_t col3 = 8;
+ uint8_t col4 = 9;
+ 
 //--------------------------------------------------------------------------------
          /* Header declaration for importing different library used */
 //---------------------------------------------------------------------------------
