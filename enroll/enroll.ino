@@ -91,6 +91,7 @@ void setup() {
 void loop() {
   char key = keypad.getKey();
   if (key) {
+    keyPressTone();
     switch (key) {
       case '1': // Enroll
         lcd.clear();
@@ -113,9 +114,11 @@ void loop() {
         if (getFingerprintEnroll()) {
           lcd.clear();
           lcd.print("Enrolled!");
+          successSound();
         } else {
           lcd.clear();
           lcd.print("Enroll Failed");
+          warningSound();
         }
         delay(2000);
         showMenu();
@@ -129,6 +132,7 @@ void loop() {
           lcd.clear();
           lcd.print("Invalid ID");
           delay(2000);
+          warningSound();
           showMenu();
           return;
         }
@@ -138,9 +142,11 @@ void loop() {
         if (p == FINGERPRINT_OK) {
           lcd.clear();
           lcd.print("Deleted!");
+          successSound();
         } else {
           lcd.clear();
           lcd.print("Delete Failed");
+          warningSound();
         }
         delay(2000);
         showMenu();
@@ -157,6 +163,7 @@ void loop() {
       default:
         lcd.clear();
         lcd.print("Invalid option");
+        warningSound();
         delay(2000);
         showMenu();
         break;
