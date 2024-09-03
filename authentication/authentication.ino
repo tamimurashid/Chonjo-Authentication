@@ -90,13 +90,6 @@ void keyPressTone() {
   noTone(buzzle);
 }
 
-// Function to play a warning sound
-void warningSound() {
-  tone(buzzle, 500, 500); // Play a 500Hz tone for 500ms
-  delay(500);
-  noTone(buzzle);
-}
-
 // Function to play a success sound
 void successSound() {
   tone(buzzle, 1500, 300); // Play a 1.5kHz tone for 300ms
@@ -135,7 +128,7 @@ uint8_t rfidAuthentication() {
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
-      //successSound();
+
       return 2; // RFID tag matched
     } else {
       Serial.println("RFID tag did not match.");

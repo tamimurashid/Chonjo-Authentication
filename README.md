@@ -1,27 +1,25 @@
-# Multifactor-authentication-hardware-system
-### Project Overview: # Multifactor-authentication-hardware-system
+Chonjo Multifactor Authentication System
+Overview
 
-Description:
-The # Multifactor-authentication-hardware-system is a robust security solution designed to safeguard areas with sensitive data. Utilizing the NodeMCU ESP8266 microcontroller, this system integrates three distinct authentication methods: a fingerprint sensor, a password entered via a keyboard, and RFID-based ID verification.
 
-Functionality:
-To gain access, a user must successfully pass all three authentication stages. First, they provide their fingerprint, followed by entering a secure password, and finally presenting an RFID card for ID verification. Only when all factors are verified does the system grant access, ensuring a high level of security.
 
-Purpose:
-This system is ideal for environments where data security is paramount, such as server rooms, banks, or any facility where single-factor authentication is insufficient. By requiring multiple forms of authentication, it significantly reduces the risk of unauthorized access, making it a critical tool for protecting sensitive information and assets.
+    Access Control:
+        Once all three factors (RFID, password, fingerprint) are authenticated, the system triggers the relay, unlocking the door or performing another specified action.
+        The relay remains active for a predefined duration (e.g., 5 seconds) before locking the door again.
+        The system then resets, ready for the next authentication sequence.
 
-Methodology:
+Key Functions
 
-1. Programming Languages:
-   - C++: The core of the project is primarily written in C++, particularly for handling the microcontroller operations, interfacing with sensors, and managing authentication processes.
-   - Python: Used for system-level tasks, including data processing, and communication between components.
+    rfidAuthentication(): Manages the detection and validation of the RFID tag.
+    getFingerprintID() and getFingerprintIDez(): Handle fingerprint scanning and matching.
+    scrollmessage(String title, String message): Displays scrolling messages on the LCD, enhancing user interaction and providing clear feedback.
 
-2. Development Platform:
-   - PlatformIO: Chosen due to the complexity of the project, PlatformIO provides a versatile and efficient development environment for embedded systems, simplifying code management and library integration.
+Advantages
 
-3. Libraries Used:
-   - Adafruit Fingerprint Library: Used to manage fingerprint sensor operations, including enrollment, matching, and deletion of fingerprint data.
-   - SoftwareSerial: Facilitates serial communication with devices that require a serial connection, such as the fingerprint sensor and RFID module.
-   - Other Libraries:Additional libraries were utilized to support various hardware components and communication protocols, ensuring seamless integration and functionality across the system.
+    High Security: By combining three forms of authentication, the system significantly reduces the likelihood of unauthorized access.
+    User Feedback: The LCD and buzzer provide real-time feedback to the user, making the system easy to use and understand.
+    Scalability: Additional features, such as logging attempts or integrating with a network, can be added to further enhance security and monitoring.
 
-This methodology, combining powerful tools and languages with specialized libraries, ensures that the multifactor authentication system is both reliable and secure, capable of protecting highly sensitive environments.
+Conclusion
+
+The Chonjo Multifactor Authentication System is a comprehensive solution for environments that require stringent access controls. With its combination of RFID, keypad, and fingerprint authentication, this system ensures that only individuals with proper credentials can gain access. This project serves as an excellent foundation for further enhancements in secure access systems.
