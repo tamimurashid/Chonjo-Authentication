@@ -11,7 +11,8 @@
 //----/* User identification config*/------------
    String id_1 = "27b25580";
    String id_2 = "6e5d273";
-   String Register_password_1 = "13A46B79C";
+  //  String Register_password_1 = "13A46B79C";
+   String Register_password_1 = "2356";
 //-----------------------------------------------   
 
 //----------// ports configuration//--------------
@@ -34,21 +35,27 @@ This are pins for connection of 4x4 keypad to the arduino board regardles this v
 #include <MFRC522.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <Keypad.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
+#include <Keypad_I2C.h>
+#include <Keypad.h>        // GDY120705
+#include <Wire.h>
+
+#define I2CADDR 0x26// change address 
+
+
 
 //--------------------------------------------------------------------------------
          /* Pin definition   */
 //---------------------------------------------------------------------------------
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-SoftwareSerial mySerial(14, 15);  // D1 is RX, D2 is TX
+SoftwareSerial mySerial(6, 5);  // D1 is RX, D2 is TX
 #else
 #define mySerial Serial1
 #endif
 #define relay 17
-#define buzzle 16
+#define buzzle 2
 //--------------------------------------------------------------------------------
          /*  object creation area  and decralation of global variables */
 //---------------------------------------------------------------------------------
@@ -62,7 +69,7 @@ String command = "";
 //--------------------------------------------------------------------------------
          /* Pin definitions for Arduino Uno */
 //---------------------------------------------------------------------------------
-constexpr uint8_t RST_PIN = 0;  // RST pin for RFID
+constexpr uint8_t RST_PIN = 9;  // RST pin for RFID
 constexpr uint8_t SS_PIN = 10;  // SDA (SS) pin for RFID
 
 MFRC522 rfid(SS_PIN, RST_PIN);
@@ -83,10 +90,14 @@ char keys[ROWS][COLS] = {
 //--------------------------------------------------------------------------------
          /* Keypad setup pins declaration  */
 //--------------------------------------------------------------------------------
-byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
+byte rowPins[ROWS] = {4, 5, 6, 7}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {0, 1, 2, 3}; //connect to the column pinouts of the keypad
 
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+// byte rowPins[ROWS] = {3, 2, 1, 0}; //connect to the row pinouts of the keypad
+// byte colPins[COLS] = {7, 6, 5, 4}; //connect to the column pinouts of the keypad
+
+//initialize an instance of class NewKeypad
+Keypad_I2C newKeypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR); 
 
 uint8_t id;
 String tag;
@@ -168,6 +179,7 @@ uint8_t rfidAuthentication() {
          of seria communication and lcd display 16*2.    */
 //--------------------------------------------------------------------------------
 void setup() {
+  newKeypad.begin();
   mySerial.begin(57600);
   while (!Serial);
   Serial.begin(9600);
@@ -276,9 +288,10 @@ void loop() {
         enteredPassword = "";
         char key;
         while (true) {// while loop to wait user password 
-            key = keypad.getKey();
+            key = newKeypad.getKey();
             if (key) {
               keyPressTone();// added
+              Serial.print(key);
                 if (key == '#') {
                     break;  // Enter key pressed
                 } else if (key == 'D') {
