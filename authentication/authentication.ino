@@ -1,33 +1,20 @@
 /**
- Chonjo multifactor authenticate system 
+ Smartfy  Multifactor Authenticate System 
  This file is for authentication mode 
 */
-
-//--------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------
 
 //---------------------------/*System configaration panel */----------------------
 
 //----/* User identification config*/------------
    String id_1 = "27b25580";
    String id_2 = "6e5d273";
-  //  String Register_password_1 = "13A46B79C";
    String Register_password_1 = "2356";
+  //  String Register_password_2 = "1234";
+  //  String Register_password_3 = "45687";
 //-----------------------------------------------   
 
-//----------// ports configuration//--------------
-//------Keypad-ports--config---------------
 /*Description:
 This are pins for connection of 4x4 keypad to the arduino board regardles this version work on arduni board only but can be modifying for other baord when necessary*/
- uint8_t row1 = 2;
- uint8_t row2 = 3;
- uint8_t row3 = 4;
- uint8_t row4 = 5;
- uint8_t col1 = 6;
- uint8_t col2 = 7;
- uint8_t col3 = 8;
- uint8_t col4 = 9;
- 
 //--------------------------------------------------------------------------------
          /* Header declaration for importing different library used */
 //---------------------------------------------------------------------------------
@@ -39,10 +26,9 @@ This are pins for connection of 4x4 keypad to the arduino board regardles this v
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
 #include <Keypad_I2C.h>
-#include <Keypad.h>        // GDY120705
+#include <Keypad.h>        
 #include <Wire.h>
-
-#define I2CADDR 0x26// change address 
+#define I2CADDR 0x26 
 
 
 
@@ -54,7 +40,7 @@ SoftwareSerial mySerial(6, 5);  // D1 is RX, D2 is TX
 #else
 #define mySerial Serial1
 #endif
-#define relay 17
+#define relay 7
 #define buzzle 2
 //--------------------------------------------------------------------------------
          /*  object creation area  and decralation of global variables */
@@ -99,6 +85,7 @@ byte colPins[COLS] = {0, 1, 2, 3}; //connect to the column pinouts of the keypad
 //initialize an instance of class NewKeypad
 Keypad_I2C newKeypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR); 
 
+
 uint8_t id;
 String tag;
 String enteredPassword = "";
@@ -106,8 +93,8 @@ String enteredPassword = "";
          /* sound functions  */
 //--------------------------------------------------------------------------------
 void keyPressTone() {
-  tone(buzzle, 1000, 100); // Play a 1kHz tone for 100ms
-  delay(100); // Wait for the tone to finish
+  tone(buzzle, 500, 100); // Play a 0.5kHz tone for 100ms
+  delay(100); // delay for tone 
   noTone(buzzle);
 }
 
@@ -120,10 +107,10 @@ void warningSound() {
 
 // Function to play a success sound
 void successSound() {
-  tone(buzzle, 1500, 300); // Play a 1.5kHz tone for 300ms
+  tone(buzzle, 1000, 300); // Play a 1.5kHz tone for 300ms
   delay(300);
   noTone(buzzle);
-  tone(buzzle, 2000, 300); // Play a 2kHz tone for 300ms
+  tone(buzzle, 1500, 300); // Play a 2kHz tone for 300ms
   delay(300);
   noTone(buzzle);
 }
@@ -152,7 +139,7 @@ uint8_t rfidAuthentication() {
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
     
-    if (tag ==  id_1 || tag ==  id_2 ) { // Replace this with your expected RFID tag in HEX
+    if (tag ==  id_1 || tag ==  id_2  ) { 
       Serial.println("RFID tag matched!");
       lcd.clear();
       lcd.print("Tag matched!");
@@ -275,6 +262,8 @@ int getFingerprintIDez() {
          to run simultaneously or reapeted to be repeated   */
 //--------------------------------------------------------------------------------
 void loop() {
+
+  rfid.PCD_Init();
   
     uint8_t rfidStatus = rfidAuthentication();// rfid check for authenticatiom
     if (rfidStatus > 1) {  // RFID tag matched
@@ -294,7 +283,7 @@ void loop() {
               Serial.print(key);
                 if (key == '#') {
                     break;  // Enter key pressed
-                } else if (key == 'D') {
+                } else if (key == '*' || key == 'D') {
                     if (enteredPassword.length() > 0) {
                         enteredPassword.remove(enteredPassword.length() - 1); // Remove the last character
                         lcd.setCursor(0, 1);
@@ -324,10 +313,11 @@ void loop() {
                       the password  */
       //--------------------------------------------------------------------------------
         if (enteredPassword == Register_password_1) {
+            successSound();
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
-            successSound();
+            
             
            int fingerID = -1;
             int attemptCount = 0;
@@ -336,7 +326,7 @@ void loop() {
             while (fingerID == -1 && attemptCount < maxAttempts) {
                 fingerID = getFingerprintIDez();
                 attemptCount++;
-                delay(1000); // Wait for 1 second before checking again
+                delay(5000); // Wait for 1 second before checking again
 
                 if (fingerID > -1) {
                     Serial.println("Fingerprint matched, access granted!");
