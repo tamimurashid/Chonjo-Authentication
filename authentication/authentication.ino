@@ -36,7 +36,7 @@ This are pins for connection of 4x4 keypad to the arduino board regardles this v
          /* Pin definition   */
 //---------------------------------------------------------------------------------
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-SoftwareSerial mySerial(6, 5);  // D1 is RX, D2 is TX
+SoftwareSerial mySerial(5, 6);
 #else
 #define mySerial Serial1
 #endif

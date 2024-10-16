@@ -2,7 +2,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
 #include <Keypad_I2C.h>
-#include<Keypad.h>
+#include <Keypad.h>
 #include <Wire.h>
 
 // I2C Address for Keypad
@@ -18,31 +18,25 @@ char keys[ROWS][COLS] = {
   {'*', '0', '#', 'D'}
 };
 
-//--------------------------------------------------------------------------------
-         /* Keypad setup pins declaration  */
-//--------------------------------------------------------------------------------
-byte rowPins[ROWS] = {4, 5, 6, 7}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {0, 1, 2, 3}; //connect to the column pinouts of the keypad
+byte rowPins[ROWS] = {4, 5, 6, 7}; // Keypad row pins
+byte colPins[COLS] = {0, 1, 2, 3}; // Keypad column pins
 
+// Initialize keypad with I2C
+Keypad_I2C keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR);
 
-//initialize an instance of class keypad
-Keypad_I2C keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR); 
-
-
-// Software Serial for Fingerprint (RX, TX pins)
+// Software Serial for Fingerprint (RX, TX)
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-SoftwareSerial mySerial(6, 5);  // RX, TX
+SoftwareSerial mySerial(5, 6);
 #define buzzle 2
 #else
 #define mySerial Serial1
 #endif
 
-// Fingerprint and LCD initialization
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 uint8_t id;
-uint8_t p;  // Use existing 'p' variable to avoid redeclaration issues
+uint8_t p;
 
 // Sound Feedback Functions
 void keyPressTone() {
@@ -263,6 +257,11 @@ uint8_t getFingerprintEnroll() {
   lcd.print("Storing ID...");
   result = finger.storeModel(id);
   return (result == FINGERPRINT_OK);
+  Serial.print("Total ID'S "); 
+  Serial.println(finger.templateCount);
+  lcd.clear();
+  lcd.print("Total ID'S ");
+  lcd.print(finger.templateCount);
 }
 
 void listFingerprints() {
@@ -279,4 +278,3 @@ void listFingerprints() {
   }
   Serial.println("Listing complete");
 }
-
