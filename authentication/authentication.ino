@@ -319,7 +319,7 @@ void loop() {
             delay(1000);
             
             
-           int fingerID = -1;
+            int fingerID = -1;
             int attemptCount = 0;
             const int maxAttempts = 5; // Maximum attempts or time to wait for fingerprint
 
