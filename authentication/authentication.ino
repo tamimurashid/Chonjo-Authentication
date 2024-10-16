@@ -323,12 +323,12 @@ void loop() {
             int attemptCount = 0;
             const int maxAttempts = 5; // Maximum attempts or time to wait for fingerprint
 
-            while (fingerID == -1 && attemptCount < maxAttempts) {
-                fingerID = getFingerprintIDez();
-                attemptCount++;
-                delay(5000); // Wait for 1 second before checking again
-
-                if (fingerID > -1) {
+            // while (fingerID == -1 && attemptCount < maxAttempts) {
+            //     fingerID = getFingerprintIDez();
+            //     attemptCount++;
+            //     delay(5000); // Wait for 1 second before checking agai
+            // }
+             if (fingerID > -1) {
                     Serial.println("Fingerprint matched, access granted!");
                     scrollmessage("Fingerprint OK", "Access granted!");
                     successSound();
@@ -344,7 +344,6 @@ void loop() {
                         scrollmessage("Fingerprint Fail", "Access denied!");
                     }
                 }
-            }
 
             if (fingerID == -1) {
                 // Handle case where no valid fingerprint was detected after maximum attempts
