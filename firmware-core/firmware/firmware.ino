@@ -1,23 +1,3 @@
-/**
- Smartfy  Multifactor Authenticate System 
- This file is for authentication mode 
-*/
-
-//---------------------------/*System configaration panel */----------------------
-
-//----/* User identification config*/------------
-   String id_1 = "27b25580";
-   String id_2 = "6e5d273";
-   String Register_password_1 = "2356";
-  //  String Register_password_2 = "1234";
-  //  String Register_password_3 = "45687";
-//-----------------------------------------------   
-
-/*Description:
-This are pins for connection of 4x4 keypad to the arduino board regardles this version work on arduni board only but can be modifying for other baord when necessary*/
-//--------------------------------------------------------------------------------
-         /* Header declaration for importing different library used */
-//---------------------------------------------------------------------------------
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Wire.h>
@@ -48,7 +28,7 @@ SoftwareSerial mySerial(5, 6);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 uint8_t getFingerprintID();
 int getFingerprintIDez();
-String command = "";
+// String command = "";
 
 
 
@@ -58,7 +38,7 @@ String command = "";
 constexpr uint8_t RST_PIN = 9;  // RST pin for RFID
 constexpr uint8_t SS_PIN = 10;  // SDA (SS) pin for RFID
 
-MFRC522 rfid(SS_PIN, RST_PIN);
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 // LCD I2C address
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -117,48 +97,33 @@ void successSound() {
 //--------------------------------------------------------------------------------
          /* Authentication function for rfid reader to scan and read id  */
 //--------------------------------------------------------------------------------
-uint8_t rfidAuthentication() {
-  if (!rfid.PICC_IsNewCardPresent()) {
-    return 0; // No new card present
+String readRFID() {
+  // Check if a new card is present
+  if (!mfrc522.PICC_IsNewCardPresent()) {
+    return "";  // No card detected, return empty string
   }
-  
-  if (rfid.PICC_ReadCardSerial()) {
-    tag = "";
-    for (byte i = 0; i < rfid.uid.size; i++) {
-      tag += String(rfid.uid.uidByte[i], HEX);  // Ensure consistent formatting
-    }
-    
-    Serial.print("RFID Tag: ");
-    Serial.println(tag);
-    
-    lcd.clear();
-    lcd.print("RFID Tag:");
-    lcd.setCursor(0, 1);
-    lcd.print(tag);
-    
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
-    
-    if (tag ==  id_1 || tag ==  id_2  ) { 
-      Serial.println("RFID tag matched!");
-      lcd.clear();
-      lcd.print("Tag matched!");
-      //successSound();
-      return 2; // RFID tag matched
-    } else {
-      Serial.println("RFID tag did not match.");
-      void warningSound();
-      lcd.clear();
-      scrollmessage("Warning !!","Unknown card/tag .."); 
-      return 1; // RFID tag mismatch
-    }
+
+  // Check if the card can be read
+  if (!mfrc522.PICC_ReadCardSerial()) {
+    return "";  // Card reading failed, return empty string
   }
-  
-  Serial.println("Failed to read card.");
-  lcd.clear();
-  lcd.print("Failed to read");
-  void warningSound();
-  return 0; // Failed to read card
+
+  // Initialize an empty string to store card ID
+  String cardID = "";
+
+  // Read the card's unique ID
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    // Append each byte in hexadecimal format to cardID
+    cardID += String(mfrc522.uid.uidByte[i], HEX);
+  }
+
+  // Convert to uppercase for consistent formatting
+  cardID.toUpperCase();
+
+  // Halt PICC (card) to stop further reading until the card is removed
+  mfrc522.PICC_HaltA();
+
+  return cardID;  // Return the card ID as a string
 }
 //--------------------------------------------------------------------------------
          /* Void setup function for all program setup and initialization of 
@@ -175,18 +140,17 @@ void setup() {
   delay(5);
   SPI.begin();
   rfid.PCD_Init();
-  pinMode(2, OUTPUT); // Pin for triggering relay or LED
 
   finger.getTemplateCount();
 
-  if (finger.templateCount == 0) {
-    Serial.println("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
-  } else {
-    Serial.print("Sensor contains "); 
-    Serial.print(finger.templateCount); 
-    Serial.println(" templates");
-    Serial.println("Waiting for valid finger...");
-  }
+  // if (finger.templateCount == 0) {
+  //   Serial.println("Sensor doesn't contain any fingerprint data. Please run the 'enroll' example.");
+  // } else {
+  //   Serial.print("Sensor contains "); 
+  //   Serial.print(finger.templateCount); 
+  //   Serial.println(" templates");
+  //   Serial.println("Waiting for valid finger...");
+  // }
   pinMode(relay, OUTPUT);
   lcd.init();
   lcd.backlight();
@@ -321,7 +285,7 @@ void loop() {
             
            int fingerID = -1;
             int attemptCount = 0;
-            const int maxAttempts = 5; // Maximum attempts or time to wait for fingerprint
+            const int maxAttempts = 10; // Maximum attempts or time to wait for fingerprint
 
             while (fingerID == -1 && attemptCount < maxAttempts) {
                 fingerID = getFingerprintIDez();
