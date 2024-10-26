@@ -227,10 +227,11 @@ int getFingerprintIDez() {
 //--------------------------------------------------------------------------------
 void loop() {
 
-  rfid.PCD_Init();
+  mfrc522.PCD_Init();
+  String Card_data = readRFID();
+   Serial.println(Card_data)
   
-    uint8_t rfidStatus = rfidAuthentication();// rfid check for authenticatiom
-    if (rfidStatus > 1) {  // RFID tag matched
+    if (Card_data ==  "#170-?") {  // #170-? is the string code for card okay
         lcd.clear();
         lcd.print("card matched ..");
         successSound();
