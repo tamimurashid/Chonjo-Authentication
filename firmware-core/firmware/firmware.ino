@@ -225,13 +225,35 @@ int getFingerprintIDez() {
          /* A void loop function is like the main function where all code that need 
          to run simultaneously or reapeted to be repeated   */
 //--------------------------------------------------------------------------------
+// Function to read serial data and return it as a String
+String readEspdata(){
+    String inputData = "";
+    
+    while (Serial.available() > 0) { 
+        char incomingByte = Serial.read(); 
+        
+        // Stop reading if newline character is found
+        if (incomingByte == '\n') {
+            break;
+        }
+        
+        inputData += incomingByte;
+        
+        // Optional: Small delay to ensure all bytes are read together
+        delay(5); 
+    }
+    
+    return inputData;
+}
+
 void loop() {
 
   mfrc522.PCD_Init();
   String Card_data = readRFID();
+  String server_data = readEspdata();
    Serial.println(Card_data)
   
-    if (Card_data ==  "#170-?") {  // #170-? is the string code for card okay
+    if (server_data ==  "#170-?") {  // #170-? is the string code for card okay
         lcd.clear();
         lcd.print("card matched ..");
         successSound();
@@ -277,14 +299,14 @@ void loop() {
                       /* here is when after correct id then it compare with 
                       the password  */
       //--------------------------------------------------------------------------------
-        if (enteredPassword == Register_password_1) {
+        if (server_data == "#172-?") {
             successSound();
             Serial.println("Access granted! Proceeding with fingerprint authentication...");
             scrollmessage("Password OK", "Place Finger...");
             delay(1000);
             
             
-           int fingerID = -1;
+            int fingerID = -1;
             int attemptCount = 0;
             const int maxAttempts = 10; // Maximum attempts or time to wait for fingerprint
 
