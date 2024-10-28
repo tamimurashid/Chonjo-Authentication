@@ -28,8 +28,6 @@ SoftwareSerial mySerial(5, 6);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 uint8_t getFingerprintID();
 int getFingerprintIDez();
-// String command = "";
-
 
 
 //--------------------------------------------------------------------------------
@@ -38,7 +36,7 @@ int getFingerprintIDez();
 constexpr uint8_t RST_PIN = 9;  // RST pin for RFID
 constexpr uint8_t SS_PIN = 10;  // SDA (SS) pin for RFID
 
-MFRC522 mfrc522(SS_PIN, RST_PIN);
+MFRC522 rfid(SS_PIN, RST_PIN);
 
 // LCD I2C address
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -97,39 +95,68 @@ void successSound() {
 //--------------------------------------------------------------------------------
          /* Authentication function for rfid reader to scan and read id  */
 //--------------------------------------------------------------------------------
-String readRFID() {
-  // Check if a new card is present
-  if (!mfrc522.PICC_IsNewCardPresent()) {
-    return "";  // No card detected, return empty string
+
+// String readRFID() {
+//   // Check if a new card is present
+//   if (!mfrc522.PICC_IsNewCardPresent()) {
+//     return "";  // No card detected, return empty string
+//   }
+
+//   // Check if the card can be read
+//   if (!mfrc522.PICC_ReadCardSerial()) {
+//     return "";  // Card reading failed, return empty string
+//   }
+
+//   // Initialize an empty string to store card ID
+//   String cardID = "";
+
+//   // Read the card's unique ID
+//   for (byte i = 0; i < mfrc522.uid.size; i++) {
+//     // Append each byte in hexadecimal format to cardID
+//     cardID += String(mfrc522.uid.uidByte[i], HEX);
+//   }
+
+//   // Convert to uppercase for consistent formatting
+//   cardID.toUpperCase();
+
+//   // Halt PICC (card) to stop further reading until the card is removed
+//   mfrc522.PICC_HaltA();
+
+//   return cardID;  // Return the card ID as a string
+// }
+
+uint8_t rfidAuthentication() {
+  if (!rfid.PICC_IsNewCardPresent()) {
+    return 0; // No new card present
   }
-
-  // Check if the card can be read
-  if (!mfrc522.PICC_ReadCardSerial()) {
-    return "";  // Card reading failed, return empty string
+  if (rfid.PICC_ReadCardSerial()) {
+    tag = "";
+    for (byte i = 0; i < rfid.uid.size; i++) {
+      tag += String(rfid.uid.uidByte[i], HEX);  // Ensure consistent formatting
+    }
+    
+    Serial.print("RFID Tag: ");
+    Serial.println(tag);// this will send the id to the esp32 for more computation   
+    lcd.clear();
+    lcd.print("RFID Tag:");
+    lcd.setCursor(0, 1);
+    lcd.print(tag);
+    
+    rfid.PICC_HaltA();
+    rfid.PCD_StopCrypto1();
   }
-
-  // Initialize an empty string to store card ID
-  String cardID = "";
-
-  // Read the card's unique ID
-  for (byte i = 0; i < mfrc522.uid.size; i++) {
-    // Append each byte in hexadecimal format to cardID
-    cardID += String(mfrc522.uid.uidByte[i], HEX);
-  }
-
-  // Convert to uppercase for consistent formatting
-  cardID.toUpperCase();
-
-  // Halt PICC (card) to stop further reading until the card is removed
-  mfrc522.PICC_HaltA();
-
-  return cardID;  // Return the card ID as a string
 }
+
+
+
+
+
 //--------------------------------------------------------------------------------
          /* Void setup function for all program setup and initialization of 
-         importance library that are required in the system  exapmle initialization 
-         of seria communication and lcd display 16*2.    */
+         important library that are required in the system  exapmle initialization 
+         of serial communication and lcd display 16*2.    */
 //--------------------------------------------------------------------------------
+
 void setup() {
   newKeypad.begin();
   mySerial.begin(57600);
@@ -159,6 +186,7 @@ void setup() {
   delay(100);
   lcd.print("Ready ");
 }
+
 //--------------------------------------------------------------------------------
          /* lcd function which enable provide message in scroll format  */
 //--------------------------------------------------------------------------------
@@ -172,6 +200,8 @@ void scrollmessage(String title, String message) {
     delay(100);                // Adjust delay for scrolling speed
   }
 }
+
+
 //--------------------------------------------------------------------------------
          /* A finger print function to read fingers when detected and return value
           for  further validation.        */
@@ -201,6 +231,7 @@ uint8_t getFingerprintID() {
 
   return finger.fingerID;
 }
+
 //--------------------------------------------------------------------------------
          /* This is finger print function which returns value when finger is
           detected  */
@@ -225,8 +256,10 @@ int getFingerprintIDez() {
          /* A void loop function is like the main function where all code that need 
          to run simultaneously or reapeted to be repeated   */
 //--------------------------------------------------------------------------------
-// Function to read serial data and return it as a String
-String readEspdata(){
+
+
+// Function to read serial data and return it as a String (assumed to be the server password)
+String readEspdata() {
     String inputData = "";
     
     while (Serial.available() > 0) { 
@@ -239,7 +272,7 @@ String readEspdata(){
         
         inputData += incomingByte;
         
-        // Optional: Small delay to ensure all bytes are read together
+        // Small delay to ensure all bytes are read together
         delay(5); 
     }
     
@@ -247,114 +280,104 @@ String readEspdata(){
 }
 
 void loop() {
+  //this runs the rfid  scanner to scan id and send to the esp32
+  uint8_t rfidAuthentication();
 
-  mfrc522.PCD_Init();
-  String Card_data = readRFID();
+  // Obtain the server-provided password
   String server_data = readEspdata();
-   Serial.println(Card_data)
   
-    if (server_data ==  "#170-?") {  // #170-? is the string code for card okay
-        lcd.clear();
-        lcd.print("card matched ..");
-        successSound();
-        delay(1000);
-        lcd.clear();
-        lcd.print("Enter Password:");
-        Serial.println("Enter Password:");
-        enteredPassword = "";
-        char key;
-        while (true) {// while loop to wait user password 
-            key = newKeypad.getKey();
-            if (key) {
-              keyPressTone();// added
+  // Proceed only if Card ID matches the criteria (assuming "#170-?" for valid Card ID)
+  if (server_data == "#170-?") {
+      lcd.clear();
+      lcd.print("card matched ..");
+      successSound();
+      delay(1000);
+      lcd.clear();
+      lcd.print("Enter Password:");
+      Serial.println("Enter Password:");
+      enteredPassword = "";
+      char key;
+      
+      // Gather the password entered by the user
+      while (true) {
+          key = newKeypad.getKey();
+          if (key) {
+              keyPressTone();
               Serial.print(key);
-                if (key == '#') {
-                    break;  // Enter key pressed
-                } else if (key == '*' || key == 'D') {
-                    if (enteredPassword.length() > 0) {
-                        enteredPassword.remove(enteredPassword.length() - 1); // Remove the last character
-                        lcd.setCursor(0, 1);
-                        lcd.print("                "); // Clear the previous display line
-                        lcd.setCursor(0, 1);
-                        for (int i = 0; i < enteredPassword.length(); i++) {
-                            lcd.print('*'); // Print * for each character in enteredPassword
-                        }
-                    }
-                } else {
-                    enteredPassword += key;
-                    lcd.setCursor(0, 1);
-                    lcd.print("                "); // Clear the previous display line
-                    lcd.setCursor(0, 1);
-                    for (int i = 0; i < enteredPassword.length(); i++) {
-                        lcd.print('*'); // Print * for each character entered
-                    }
-                }
-            }
-        }
-        
-        Serial.print("Password entered: ");
-        Serial.println(enteredPassword);
-        lcd.clear();
-        //--------------------------------------------------------------------------------
-                      /* here is when after correct id then it compare with 
-                      the password  */
-      //--------------------------------------------------------------------------------
-        if (server_data == "#172-?") {
-            successSound();
-            Serial.println("Access granted! Proceeding with fingerprint authentication...");
-            scrollmessage("Password OK", "Place Finger...");
-            delay(1000);
-            
-            
-            int fingerID = -1;
-            int attemptCount = 0;
-            const int maxAttempts = 10; // Maximum attempts or time to wait for fingerprint
+              
+              if (key == '#') {
+                  break;  // Enter key pressed
+              } else if (key == '*' || key == 'D') {
+                  // Handle backspace or delete
+                  if (enteredPassword.length() > 0) {
+                      enteredPassword.remove(enteredPassword.length() - 1);
+                      lcd.setCursor(0, 1);
+                      lcd.print("                ");  // Clear display
+                      lcd.setCursor(0, 1);
+                      for (int i = 0; i < enteredPassword.length(); i++) {
+                          lcd.print('*');  // Display * for each character
+                      }
+                  }
+              } else {
+                  enteredPassword += key;
+                  lcd.setCursor(0, 1);
+                  lcd.print("                ");
+                  lcd.setCursor(0, 1);
+                  for (int i = 0; i < enteredPassword.length(); i++) {
+                      lcd.print('*');  // Display * for each character
+                  }
+              }
+          }
+      }
+      
+      Serial.print("Password entered: ");
+      Serial.println(enteredPassword);
+      lcd.clear();
+      
+      // Compare entered password with server password
+      if (server_data == enteredPassword) {
+          successSound();
+          Serial.println("Access granted! Proceeding with fingerprint authentication...");
+          scrollmessage("Password OK", "Place Finger...");
+          delay(1000);
+          
+          // Fingerprint authentication
+          int fingerID = -1;
+          int attemptCount = 0;
+          const int maxAttempts = 10;
+          
+          while (fingerID == -1 && attemptCount < maxAttempts) {
+              fingerID = getFingerprintIDez();
+              attemptCount++;
+              delay(2000);  // Delay before retrying
 
-            while (fingerID == -1 && attemptCount < maxAttempts) {
-                fingerID = getFingerprintIDez();
-                attemptCount++;
-                delay(2000); // Wait for 1 second before checking again
+              if (fingerID > -1) {
+                  Serial.println("Fingerprint matched, access granted!");
+                  scrollmessage("Fingerprint OK", "Access granted!");
+                  successSound();
+                  digitalWrite(relay, HIGH);  // Trigger relay
+                  delay(5000);  // Keep relay active
+                  digitalWrite(relay, LOW);  // Lock again
+              } else {
+                  if (attemptCount < maxAttempts) {
+                      Serial.println("Waiting for valid fingerprint...");
+                      scrollmessage("Place Finger", "Try again...");
+                  } else {
+                      Serial.println("Fingerprint did not match.");
+                      scrollmessage("Fingerprint Fail", "Access denied!");
+                  }
+              }
+          }
 
-                if (fingerID > -1) {
-                    Serial.println("Fingerprint matched, access granted!");
-                    scrollmessage("Fingerprint OK", "Access granted!");
-                    successSound();
-                    digitalWrite(relay, HIGH); // Trigger relay or unlock door
-                    delay(5000); // Keep the door unlocked for 5 seconds
-                    digitalWrite(relay, LOW); // Lock the door again
-                } else {
-                    if (attemptCount < maxAttempts) {
-                        Serial.println("Waiting for valid fingerprint...");
-                        scrollmessage("Place Finger", "Try again...");
-                    } else {
-                        Serial.println("Fingerprint did not match.");
-                        scrollmessage("Fingerprint Fail", "Access denied!");
-                    }
-                }
-            }
-
-            if (fingerID == -1) {
-                // Handle case where no valid fingerprint was detected after maximum attempts
-                warningSound();
-                Serial.println("Max attempts reached. No valid fingerprint detected.");
-                scrollmessage("Timeout!", "Access denied!");
-                
-            }
-
-            lcd.clear();
-            scrollmessage("Hi there", "Please scan ID");
-            
-        } else {
-            Serial.println("Access denied!");
-            warningSound();
-            scrollmessage("Error !!", "Wrong password!!");
-            delay(100);
-            scrollmessage("Ooops !!", "Access denied!!");
-            delay(100);
-            lcd.clear();
-            lcd.print("Scan ID again...");
-        }
-    }
-    
-    delay(1000); // Optional delay to prevent constant polling
+          if (fingerID == -1) {
+              warningSound();
+              Serial.println("Max attempts reached. No valid fingerprint detected.");
+              scrollmessage("Timeout!", "Access denied!");
+          }
+      } else {
+          warningSound();
+          Serial.println("Incorrect password entered.");
+          scrollmessage("Password Fail", "Access Denied!");
+      }
+  }
 }
