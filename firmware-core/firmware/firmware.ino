@@ -96,56 +96,45 @@ void successSound() {
          /* Authentication function for rfid reader to scan and read id  */
 //--------------------------------------------------------------------------------
 
-// String readRFID() {
-//   // Check if a new card is present
-//   if (!mfrc522.PICC_IsNewCardPresent()) {
-//     return "";  // No card detected, return empty string
-//   }
 
-//   // Check if the card can be read
-//   if (!mfrc522.PICC_ReadCardSerial()) {
-//     return "";  // Card reading failed, return empty string
-//   }
 
-//   // Initialize an empty string to store card ID
-//   String cardID = "";
-
-//   // Read the card's unique ID
-//   for (byte i = 0; i < mfrc522.uid.size; i++) {
-//     // Append each byte in hexadecimal format to cardID
-//     cardID += String(mfrc522.uid.uidByte[i], HEX);
-//   }
-
-//   // Convert to uppercase for consistent formatting
-//   cardID.toUpperCase();
-
-//   // Halt PICC (card) to stop further reading until the card is removed
-//   mfrc522.PICC_HaltA();
-
-//   return cardID;  // Return the card ID as a string
-// }
-
-uint8_t rfidAuthentication() {
+uint8_t read_card(){
+   // Check if a new card is present
   if (!rfid.PICC_IsNewCardPresent()) {
-    return 0; // No new card present
+    return;
   }
-  if (rfid.PICC_ReadCardSerial()) {
-    tag = "";
-    for (byte i = 0; i < rfid.uid.size; i++) {
-      tag += String(rfid.uid.uidByte[i], HEX);  // Ensure consistent formatting
+
+  // Select the card
+  if (!rfid.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  // Print UID (Unique Identifier) of the card without spaces
+  // Serial.print("Card UID: ");
+  for (byte i = 0; i < rfid.uid.size; i++) {
+    // Print each byte in HEX format without spaces
+    if (rfid.uid.uidByte[i] < 0x10) {   // Add leading zero for single-digit hex values
+      Serial.print("0");
     }
-    
-    Serial.print("RFID Tag: ");
-    Serial.println(tag);// this will send the id to the esp32 for more computation   
-    lcd.clear();
-    lcd.print("RFID Tag:");
-    lcd.setCursor(0, 1);
-    lcd.print(tag);
-    
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
+    Serial.print(rfid.uid.uidByte[i], HEX);
   }
+  Serial.println();
+
+  // // Print UID (Unique Identifier) of the card
+  // Serial.print("Card UID: ");
+  // for (byte i = 0; i < rfid.uid.size; i++) {
+  //   Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
+  //   Serial.print(rfid.uid.uidByte[i], HEX);
+  // }
+  // Serial.println();
+
+  // Halt PICC (stop reading)
+  rfid.PICC_HaltA();
+  // Stop encryption on PCD (reader)
+  rfid.PCD_StopCrypto1();
+
 }
+
 
 
 
@@ -281,7 +270,7 @@ String readEspdata() {
 
 void loop() {
   //this runs the rfid  scanner to scan id and send to the esp32
-  uint8_t rfidAuthentication();
+   read_card();
 
   // Obtain the server-provided password
   String server_data = readEspdata();
