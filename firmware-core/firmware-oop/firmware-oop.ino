@@ -10,6 +10,9 @@
 #define I2CADDR 0x26
 #define trigger 7
 #define buzzle 2 
+const String CARD_MATCH_CODE = "#$170@!z";
+const String PASSWORD_OK_CODE = "#$172@!z";
+
 
 // Pin definition for SoftwareSerial
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
@@ -73,6 +76,15 @@ public:
             delay(100);
         }
     }
+    void displayMessage(const String& line1, const String& line2 = "") {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(line1);
+    lcd.setCursor(0, 1);
+    lcd.print(line2);
+
+}
+
 };
 
 class Peripherials : public Sound {
@@ -81,8 +93,8 @@ public:
     uint8_t read_card();
     String password_read();
     int getFingerprintIDez();
+    
 };
-
 void Peripherials::setup() {
     Display display;
     newKeypad.begin();
@@ -199,27 +211,38 @@ String readEspdata() {
 }
 Peripherials peripherials;
 
+class Handler : public Sound, public Display{
+  public:
+  void handleCardMatch();
+  void handlePasswordMatch();
+
+};
+
+void Handler::handleCardMatch() {
+
+    displayMessage("Card match!");
+    successSound();
+    displayMessage("Enter password ");
+    peripherials.password_read();
+}
+void Handler::handlePasswordMatch() {
+    successSound();
+    displayMessage("Success", "Password OK!");
+}
+
 void setup() {
     peripherials.setup();
 }
 
 void loop() {
-    Sound sound;
-    peripherials.read_card();
-    String read_data = readEspdata();
-    if (read_data == "#$170@!z") {
-        lcd.print("Card match !");
-        lcd.clear();
-        sound.successSound();
-        delay(50);
-        lcd.print("Enter password ");
-        peripherials.password_read();
-    } else if (read_data == "#$172@!z") {
-        sound.successSound();
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Success");
-        lcd.setCursor(0, 1);
-        lcd.print("Password OK !");
+    Handler handler;
+    String responseCode = readEspdata();
+
+    if (responseCode == CARD_MATCH_CODE) {
+        handler.handleCardMatch();
+    } else if (responseCode == PASSWORD_OK_CODE) {
+        handler.handlePasswordMatch();
+    } else {
+        Serial.println("Unknown response received: " + responseCode);
     }
 }
