@@ -36,6 +36,7 @@ Keypad_I2C newKeypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR);
 
 String enteredPassword = "";
 
+// Classes and Instantiations
 class Sound {
 public:
   void keyPressTone() { tone(buzzle, 500, 100); delay(100); noTone(buzzle); }
@@ -69,9 +70,6 @@ public:
     return true;
   }
 
-  int readFingerprint() {
-    return finger.getImage() == FINGERPRINT_OK ? finger.fingerID : -1;
-  }
   int getFingerprintIDez() {
     uint8_t p = finger.getImage();
     if (p != FINGERPRINT_OK) return -1;
@@ -107,8 +105,10 @@ public:
   }
 };
 
+// Instantiate global objects
 Peripherals peripherals;
 Display display;
+Sound sound;
 
 // Function declaration for ESP32-CAM response handling
 String waitForEspResponse();
@@ -120,8 +120,9 @@ void setup() {
 }
 
 void loop() {
-  Sound sound;
-  bool rfidAuthenticated = false, fingerprintAuthenticated = false, passwordAuthenticated = false;
+  bool rfidAuthenticated = false;
+  bool fingerprintAuthenticated = false;
+  bool passwordAuthenticated = false;
 
   // Step 1: Check RFID
   while (!rfidAuthenticated) {
@@ -134,65 +135,68 @@ void loop() {
   }
 
   // Step 2: Check Fingerprint
-    int fingerID = -1;
+  while (!fingerprintAuthenticated) {
     int attemptCount = 0;
     const int maxAttempts = 10;
-    //bool fingerprintAuthenticated = false;
-  // while (!fingerprintAuthenticated) {
-  while (fingerprintAuthenticated == false && attemptCount < maxAttempts) {
-    int fingerId = peripherals.getFingerprintIDez();
-    attemptCount++;
-    delay(2000);
-    if (fingerId > -1) {
-      display.showMessage("Fingerprint OK", "Proceed to PIN");
-      sound.successSound();
-      delay(1000);
-      fingerprintAuthenticated = true;
-      break;
-    }else {
-          if (attemptCount < maxAttempts) {
-              Serial.println("Waiting for valid fingerprint...");
-              display.showMessage("Place Finger", "Try again...");
-              // scrollmessage("Place Finger", "Try again...");
-          } else {
-              Serial.println("Fingerprint did not match.");
-              // scrollmessage("Fingerprint Fail", "Access denied!");
-              display.showMessage("Fingerprint Fail", "Access denied!");
-              
-          }
+
+    while (attemptCount < maxAttempts) {
+      int fingerId = peripherals.getFingerprintIDez();
+      attemptCount++;
+      delay(2000);
+
+      if (fingerId > -1) {
+        display.showMessage("Fingerprint OK", "Proceed to PIN");
+        sound.successSound();
+        delay(1000);
+        fingerprintAuthenticated = true;
+        break;
+      } else {
+        if (attemptCount < maxAttempts) {
+          Serial.println("Waiting for valid fingerprint...");
+          display.showMessage("Place Finger", "Try again...");
+        } else {
+          Serial.println("Fingerprint did not match.");
+          display.showMessage("Fingerprint Fail", "Access denied!");
+          sound.warningSound();
+          delay(2000);
+          display.showMessage("System Ready", "Scan ID or Finger");
+          break;
+        }
       }
-  }if (fingerID == -1) {
-        // Handle case where no valid fingerprint was detected after maximum attempts
-        sound.warningSound();
-        Serial.println("Max attempts reached. No valid fingerprint detected.");
-        display.showMessage("Timeout!", "Access denied!");
-        // scrollmessage("Timeout!", "Access denied!");
-        
     }
 
+    // If fingerprint authentication failed after max attempts, reset to RFID check
+    if (!fingerprintAuthenticated) {
+      rfidAuthenticated = false;
+      break;
+    }
+  }
+
   // Step 3: Enter Password
-  display.showMessage("Enter Password", "");
-  String password = peripherals.enterPassword();
-  Serial.println(password); // Send password to ESP32 for verification
-  display.showMessage("Verifying", "Please wait...");
+  if (rfidAuthenticated && fingerprintAuthenticated) {
+    display.showMessage("Enter Password", "");
+    String password = peripherals.enterPassword();
+    Serial.println(password); // Send password to ESP32 for verification
+    display.showMessage("Verifying", "Please wait...");
 
-  // Check ESP32 response for password authentication
-  String response = waitForEspResponse();
-  if (response == "0000") {
-    passwordAuthenticated = true;
+    // Check ESP32 response for password authentication
+    String response = waitForEspResponse();
+    if (response == "0000") {
+      passwordAuthenticated = true;
+    }
+
+    // Final Access Decision
+    if (passwordAuthenticated) {
+      sound.successSound();
+      display.showMessage("Access", "Granted");
+    } else {
+      sound.warningSound();
+      display.showMessage("Access", "Denied");
+    }
+
+    delay(3000);
+    display.showMessage("System Ready", "Scan ID or Finger");
   }
-
-  // Final Access Decision
-  if (rfidAuthenticated && fingerprintAuthenticated && passwordAuthenticated) {
-    sound.successSound();
-    display.showMessage("Access", "Granted");
-  } else {
-    sound.warningSound();
-    display.showMessage("Access", "Denied");
-  }
-
-  delay(3000);
-  display.showMessage("System Ready", "Scan ID or Finger");
 }
 
 // ESP32-CAM response function
