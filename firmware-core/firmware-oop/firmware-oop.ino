@@ -72,6 +72,20 @@ public:
   int readFingerprint() {
     return finger.getImage() == FINGERPRINT_OK ? finger.fingerID : -1;
   }
+  int getFingerprintIDez() {
+    uint8_t p = finger.getImage();
+    if (p != FINGERPRINT_OK) return -1;
+
+    p = finger.image2Tz();
+    if (p != FINGERPRINT_OK) return -1;
+
+    p = finger.fingerFastSearch();
+    if (p != FINGERPRINT_OK) return -1;
+
+    Serial.print("Found ID #"); Serial.print(finger.fingerID);
+    Serial.print(" with confidence of "); Serial.println(finger.confidence);
+    return finger.fingerID;
+  }
 
   String enterPassword() {
     enteredPassword = ""; char key;
@@ -120,15 +134,41 @@ void loop() {
   }
 
   // Step 2: Check Fingerprint
-  while (!fingerprintAuthenticated) {
-    int fingerId = peripherals.readFingerprint();
-    if (fingerId >= 0) {
+    int fingerID = -1;
+    int attemptCount = 0;
+    const int maxAttempts = 10;
+    //bool fingerprintAuthenticated = false;
+  // while (!fingerprintAuthenticated) {
+  while (fingerprintAuthenticated == false && attemptCount < maxAttempts) {
+    int fingerId = peripherals.getFingerprintIDez();
+    attemptCount++;
+    delay(2000);
+    if (fingerId > -1) {
       display.showMessage("Fingerprint OK", "Proceed to PIN");
       sound.successSound();
       delay(1000);
       fingerprintAuthenticated = true;
+      break;
+    }else {
+          if (attemptCount < maxAttempts) {
+              Serial.println("Waiting for valid fingerprint...");
+              display.showMessage("Place Finger", "Try again...");
+              // scrollmessage("Place Finger", "Try again...");
+          } else {
+              Serial.println("Fingerprint did not match.");
+              // scrollmessage("Fingerprint Fail", "Access denied!");
+              display.showMessage("Fingerprint Fail", "Access denied!");
+              
+          }
+      }
+  }if (fingerID == -1) {
+        // Handle case where no valid fingerprint was detected after maximum attempts
+        sound.warningSound();
+        Serial.println("Max attempts reached. No valid fingerprint detected.");
+        display.showMessage("Timeout!", "Access denied!");
+        // scrollmessage("Timeout!", "Access denied!");
+        
     }
-  }
 
   // Step 3: Enter Password
   display.showMessage("Enter Password", "");
