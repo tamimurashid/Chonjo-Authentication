@@ -1,0 +1,6 @@
+https://github.com/miguelbalboa/rfid
+Wire
+Keypad
+https://github.com/johnrickman/LiquidCrystal_I2C
+SPI
+adafruit/Adafruit Fingerprint Sensor Library@^2.1.3
